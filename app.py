@@ -74,11 +74,20 @@ TRANSLATIONS = {
 def get_translation(lang='uz'):
     return TRANSLATIONS.get(lang, TRANSLATIONS['uz'])
     
+# app.py ichiga qo'shing (masalan, login_required funksiyasidan keyin)
+
 @app.context_processor
 def inject_translations():
-    # Session yoki so'rovdan tilni aniqlaymiz
-    lang = session.get('language') or request.args.get('lang', 'uz')
-    return dict(t=get_translation(lang))
+    # 1. Avval URL'dan lang parametrini tekshiradi (?lang=ru kabi)
+    # 2. Agar u bo'lmasa, sessiyadagi tilni oladi
+    # 3. Agar u ham bo'lmasa, default 'uz' tilini tanlaydi
+    lang = request.args.get('lang') or session.get('language') or 'uz'
+    
+    # Tanlangan tilni sessiyada saqlab qo'yamiz, 
+    # shunda keyingi sahifalarda ham shu tilda qoladi
+    session['language'] = lang
+    
+    return dict(t=get_translation(lang), current_lang=lang)
     
 def login_required(f):
     @wraps(f)
