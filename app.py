@@ -73,7 +73,13 @@ TRANSLATIONS = {
 
 def get_translation(lang='uz'):
     return TRANSLATIONS.get(lang, TRANSLATIONS['uz'])
-
+    
+@app.context_processor
+def inject_translations():
+    # Session yoki so'rovdan tilni aniqlaymiz
+    lang = session.get('language') or request.args.get('lang', 'uz')
+    return dict(t=get_translation(lang))
+    
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
