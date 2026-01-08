@@ -3,7 +3,7 @@ from functools import wraps
 import hashlib
 import json
 from datetime import datetime, timedelta
-from database import get_db, calculate_center_rating
+from database import get_db, init_db, DB_PATH, calculate_center_rating
 import os
 
 app = Flask(__name__)
@@ -576,8 +576,20 @@ def api_register_user():
             'success': False,
             'error': str(e)
         }), 400
+        
+import threading
+from telegram_bot import main as run_bot
+
+# Botni alohida oqimda (thread) ishga tushiramiz
+def start_bot():
+    print("Telegram bot ishga tushmoqda...")
+    run_bot()
+
+# if __name__ == '__main__': blokidan oldin qo'shing
+bot_thread = threading.Thread(target=start_bot, daemon=True)
+bot_thread.start()
 
 if __name__ == '__main__':
-    from database import init_db
-    init_db()
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    init_db()  # Dastur ishga tushishi bilan jadvallarni tekshiradi
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port)
