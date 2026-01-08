@@ -387,6 +387,8 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Cancel conversation"""
     await update.message.reply_text('❌ Bekor qilindi.')
     return ConversationHandler.END
+    
+from database import init_db
 
 def main():
     """Start the bot"""
