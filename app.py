@@ -346,7 +346,6 @@ def admin_dashboard():
 @app.route('/admin/add_admin', methods=['GET', 'POST'])
 @admin_required
 def add_admin():
-    # Faqat super_admin yangi admin qo'sha oladi
     if session.get('role') != 'super_admin':
         flash('Sizda bu amal uchun ruxsat yo\'q!', 'danger')
         return redirect(url_for('admin_dashboard'))
@@ -355,21 +354,34 @@ def add_admin():
         full_name = request.form.get('full_name')
         username = request.form.get('username')
         password = request.form.get('password')
-        # Parolni xavfsiz saqlash uchun hashlash
         password_hash = hashlib.sha256(password.encode()).hexdigest()
         
         conn = get_db()
         cursor = conn.cursor()
         
         try:
+            # 1. Adminni 'users' jadvaliga yaratish
             cursor.execute('''
                 INSERT INTO users (full_name, username, password, role, status, language)
                 VALUES (?, ?, ?, 'center_admin', 'active', 'uz')
             ''', (full_name, username, password_hash))
+            
+            # Yangi yaratilgan foydalanuvchining ID raqamini olamiz
+            new_admin_id = cursor.lastrowid 
+            
+            # 2. Ushbu admin uchun 'centers' jadvalida avtomatik markaz yaratish
+            # Bu qadam "Markaz topilmadi" xatosini oldini oladi
+            cursor.execute('''
+                INSERT INTO centers (name, admin_id, status, rating)
+                VALUES (?, ?, 'active', 0)
+            ''', (f"{full_name} markazi", new_admin_id))
+            
             conn.commit()
-            flash(f"Admin {full_name} muvaffaqiyatli qo'shildi!", 'success')
+            flash(f"Admin va u uchun yangi markaz muvaffaqiyatli yaratildi!", 'success')
             return redirect(url_for('admin_dashboard'))
+            
         except Exception as e:
+            conn.rollback() # Xatolik bo'lsa, o'zgarishlarni bekor qilish
             flash(f"Xatolik yuz berdi: Username band bo'lishi mumkin.", 'danger')
         finally:
             conn.close()
