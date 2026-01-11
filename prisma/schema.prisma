@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("zehn-db")
+  url      = env("DATABASE_URL")
 }
 
 // Sizning turlaringiz asosida modellar
@@ -24,3 +24,4 @@ model Center {
   latitude  Float
   longitude Float
 }
+
