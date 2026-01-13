@@ -20,9 +20,10 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // --- TUZATISH: userRole tipini aniq ko'rsatamiz ---
-  const isLoggedIn = false; 
-  const userRole: 'student' | 'super_admin' | 'admin' = 'student'; 
+  // --- TUZATISH: userRole tipini string deb e'lon qilamiz ---
+  // Bu TypeScript-ga 'student' qiymati kelajakda boshqa string bo'lishi mumkinligini aytadi
+  const isLoggedIn: boolean = false; 
+  const userRole: string = 'student'; 
 
   return (
     <html lang="uz">
