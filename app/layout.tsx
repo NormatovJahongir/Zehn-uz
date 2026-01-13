@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-// MUHIM: Fayl yo'lini aniqroq ko'rsatish build xatolarini oldini oladi
 import "./globals.css"; 
 import Link from "next/link";
 import { 
   GraduationCap, Home, MapPinned, 
   LayoutDashboard, LogOut, LogIn, 
-  Phone, Mail, Send, Instagram, Facebook 
+  Phone, Mail, Send, Instagram, Facebook  
 } from "lucide-react";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -21,9 +20,9 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Kelajakda bu qism server-side yoki context orqali olinadi
+  // --- TUZATISH: userRole tipini aniq ko'rsatamiz ---
   const isLoggedIn = false; 
-  const userRole = 'student'; 
+  const userRole: 'student' | 'super_admin' | 'admin' = 'student'; 
 
   return (
     <html lang="uz">
@@ -109,7 +108,7 @@ export default function RootLayout({
                   <h3 className="text-2xl font-black">EduMarket</h3>
                 </div>
                 <p className="text-gray-500 text-lg leading-relaxed max-w-sm">
-                  O'zbekistondagi barcha o'quv markazlarini birlashtiruvchi zamonaviy ekotizim va CRM platformasi.
+                  O&apos;zbekistondagi barcha o&apos;quv markazlarini birlashtiruvchi zamonaviy ekotizim va CRM platformasi.
                 </p>
                 <div className="flex gap-4">
                   <SocialLink href="#" icon={<Send size={20} />} hover="hover:bg-blue-50 hover:text-blue-600" />
@@ -120,7 +119,7 @@ export default function RootLayout({
 
               {/* Contact Col */}
               <div className="space-y-6">
-                <h4 className="font-bold text-gray-900 uppercase tracking-widest text-xs">Bog'lanish</h4>
+                <h4 className="font-bold text-gray-900 uppercase tracking-widest text-xs">Bog&apos;lanish</h4>
                 <div className="space-y-4">
                   <a href="tel:+998992954957" className="group flex items-center gap-3 text-gray-500 hover:text-blue-600 transition">
                     <div className="bg-gray-50 p-2 rounded-lg group-hover:bg-blue-50 transition"><Phone size={18} /></div>
@@ -159,7 +158,6 @@ export default function RootLayout({
   );
 }
 
-// Yordamchi komponent
 function SocialLink({ href, icon, hover }: { href: string, icon: React.ReactNode, hover: string }) {
   return (
     <a href={href} className={`bg-gray-50 p-3 rounded-2xl text-gray-400 transition-all duration-300 ${hover} shadow-sm active:scale-90`}>
