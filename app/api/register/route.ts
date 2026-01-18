@@ -33,7 +33,7 @@ export async function POST(request: Request) {
     const mockCenterId = "center_" + Math.random().toString(36).substr(2, 9);
 
     return NextResponse.json({ 
-      message: 'Markaz muvaffaqiyatli ro\'yxatdan o'tkazildi', 
+      message: `Markaz muvaffaqiyatli ro'yxatdan o'tkazildi`, 
       centerId: mockCenterId // Bu ID UI-da /center/[id] ga o'tish uchun ishlatiladi
     }, { status: 201 });
 
