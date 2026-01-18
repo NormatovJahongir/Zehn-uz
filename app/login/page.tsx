@@ -1,20 +1,53 @@
 "use client";
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
-  GraduationCap, LineChart, Users, Smartphone, // ChartLine -> LineChart, MobileAlt -> Smartphone
-  User, Lock, LogIn, Send, ArrowLeft 
+  GraduationCap, LineChart, Users, Smartphone, 
+  User, Lock, LogIn, Send, ArrowLeft, AlertCircle 
 } from 'lucide-react';
 import Link from 'next/link';
 
 export default function LoginPage() {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [formData, setFormData] = useState({
+    username: '',
+    password: ''
+  });
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
-    // Login mantiqi kelajakda shu yerda bo'ladi
-    setTimeout(() => setLoading(false), 2000); 
+    setError("");
+
+    try {
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Muvaffaqiyatli kirganda markaz sahifasiga yo'naltirish
+        if (data.centerId) {
+          router.push(`/center/${data.centerId}`);
+        } else if (data.role === 'SUPER_ADMIN') {
+          router.push('/admin/dashboard');
+        } else {
+          router.push('/');
+        }
+      } else {
+        setError(data.error || "Login yoki parol xato");
+      }
+    } catch (err) {
+      setError("Server bilan ulanishda xatolik yuz berdi");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -60,6 +93,13 @@ export default function LoginPage() {
             <h2 className="text-2xl font-bold text-gray-800 mb-2 text-center md:text-left">Tizimga kirish</h2>
             <p className="text-gray-500 mb-8 text-center md:text-left text-sm">Davom etish uchun hisobingizga kiring</p>
 
+            {error && (
+              <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 flex items-center gap-3 rounded-r-xl text-sm animate-pulse">
+                <AlertCircle size={18} />
+                {error}
+              </div>
+            )}
+
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
@@ -67,9 +107,10 @@ export default function LoginPage() {
                 </label>
                 <input 
                   type="text" 
-                  name="username"
                   className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition bg-gray-50 text-gray-900"
                   placeholder="Username kiriting"
+                  value={formData.username}
+                  onChange={(e) => setFormData({...formData, username: e.target.value})}
                   required
                 />
               </div>
@@ -80,9 +121,10 @@ export default function LoginPage() {
                 </label>
                 <input 
                   type="password" 
-                  name="password"
                   className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition bg-gray-50 text-gray-900"
                   placeholder="Parol kiriting"
+                  value={formData.password}
+                  onChange={(e) => setFormData({...formData, password: e.target.value})}
                   required
                 />
               </div>
@@ -111,9 +153,6 @@ export default function LoginPage() {
             </a>
 
             <div className="space-y-4 text-center">
-              <p className="text-xs text-gray-400">
-                Demo kirish: <span className="font-mono font-bold text-gray-600">superadmin / admin123</span>
-              </p>
               <Link href="/" className="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline font-medium">
                 <ArrowLeft size={16} /> Bosh sahifaga qaytish
               </Link>
