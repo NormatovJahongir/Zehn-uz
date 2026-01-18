@@ -7,21 +7,44 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Sizning turlaringiz asosida modellar
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  role      String   // SUPER_ADMIN, ADMIN, TEACHER, STUDENT
-  firstName String
-  lastName  String?
-  createdAt DateTime @default(now())
+  id         String   @id @default(uuid())
+  telegramId String?  @unique
+  email      String?  @unique
+  password   String?
+  // Role: 'SUPER_ADMIN', 'ADMIN', 'TEACHER', 'STUDENT'
+  role       String   @default("STUDENT") 
+  firstName  String
+  lastName   String?
+  
+  // Agar role 'ADMIN', 'TEACHER' yoki 'STUDENT' bo'lsa, bu maydon to'ldiriladi.
+  // Agar 'SUPER_ADMIN' bo'lsa, bu null qoladi (chunki u butun tizim egasi).
+  centerId   String?  
+  center     Center?  @relation(fields: [centerId], references: [id])
+  
+  createdAt  DateTime @default(now())
 }
 
 model Center {
-  id        String   @id @default(uuid())
-  name      String
-  latitude  Float
-  longitude Float
+  id         String    @id @default(uuid())
+  name       String
+  adminName  String?   // Markaz rahbari ismi
+  phone      String?
+  latitude   Float?    @default(0)
+  longitude  Float?    @default(0)
+  
+  // Bog'liqliklar
+  users      User[]    // Shu markazga biriktirilgan hamma (Admin, Teacher, Student)
+  subjects   Subject[] // Shu markazda o'tiladigan fanlar
+  
+  createdAt  DateTime  @default(now())
 }
 
+model Subject {
+  id        String   @id @default(uuid())
+  name      String
+  price     Float
+  duration  String?
+  centerId  String
+  center    Center   @relation(fields: [centerId], references: [id])
+}
