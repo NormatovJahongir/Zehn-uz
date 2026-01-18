@@ -14,7 +14,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Center ID topilmadi' }, { status: 400 });
     }
 
-    // Markazga tegishli barcha ma'lumotlarni parallel ravishดา tortish
+    // Markazga tegishli barcha ma'lumotlarni parallel ravishda tortish
     const [subjects, teachers, students] = await Promise.all([
       prisma.subject.findMany({ where: { centerId } }),
       prisma.user.findMany({ where: { centerId, role: 'TEACHER' } }),
@@ -44,6 +44,8 @@ export async function POST(request: Request) {
     }
 
     let result;
+    // Tasodifiy son username takrorlanmasligi uchun
+    const randomId = Math.floor(Math.random() * 1000);
 
     // Turiga qarab tegishli jadvalga saqlash
     switch (type) {
@@ -58,27 +60,33 @@ export async function POST(request: Request) {
         break;
 
       case 'teachers':
-  result = await prisma.user.create({
-    data: {
-      firstName: name,
-      role: 'TEACHER',
-      // MUHIM: Schemada username va password majburiy, 
-      // shuning uchun vaqtincha yoki generatsiya qilingan qiymat berish kerak
-      username: `teacher_${Date.now()}`, 
-      password: await bcrypt.hash('teacher123', 10), // Default parol
-      center: {
-        connect: { id: centerId } // centerId: centerId o'rniga shu usul xavfsizroq
-      }
-    }
-  });
-  break;
+        result = await prisma.user.create({
+          data: {
+            firstName: name,
+            role: 'TEACHER',
+            phone: phone || null,
+            // Majburiy username va password
+            username: `teacher_${randomId}_${Date.now()}`, 
+            password: await bcrypt.hash('teacher123', 10), 
+            center: {
+              connect: { id: centerId }
+            }
+          }
+        });
+        break;
 
       case 'students':
         result = await prisma.user.create({
           data: {
             firstName: name,
             role: 'STUDENT',
-            centerId: centerId
+            phone: phone || null,
+            // Majburiy username va password (STUDENT uchun ham)
+            username: `student_${randomId}_${Date.now()}`,
+            password: await bcrypt.hash('student123', 10),
+            center: {
+              connect: { id: centerId }
+            }
           }
         });
         break;
