@@ -16,34 +16,58 @@ export async function POST(request: Request) {
     const body = await request.json();
     const parsed = registerSchema.parse(body);
 
-    // 1. Markazni yaratish
-    const newCenter = await prisma.center.create({
-      data: {
-        name: parsed.centerName,
-      }
-    });
+    // 1. Tranzaksiya ishlatamiz: Yo hamma amal bajariladi, yo hech biri.
+    // Bu ma'lumotlar bazasida "yarimta" ma'lumot qolib ketmasligini ta'minlaydi.
+    const result = await prisma.$transaction(async (tx) => {
+      
+      // 2. Markazni yaratish
+      const newCenter = await tx.center.create({
+        data: {
+          name: parsed.centerName,
+        }
+      });
 
-    // 2. Foydalanuvchini ADMIN darajasiga ko'tarish va markazga bog'lash
-    await prisma.user.update({
-      where: { telegramId: parsed.telegramId },
-      data: {
-        firstName: parsed.adminName,
-        role: 'ADMIN',
-        centerId: newCenter.id,
-      }
+      // 3. Foydalanuvchini yangilash yoki yaratish (upsert)
+      // Chunki foydalanuvchi botdan /start bosmagan bo'lsa ham, Web App'da ro'yxatdan o'ta olishi kerak
+      const updatedUser = await tx.user.upsert({
+        where: { telegramId: parsed.telegramId },
+        update: {
+          firstName: parsed.adminName,
+          phone: parsed.phone, // Telefon raqamini saqlash qo'shildi
+          role: 'ADMIN',
+          centerId: newCenter.id,
+        },
+        create: {
+          telegramId: parsed.telegramId,
+          firstName: parsed.adminName,
+          phone: parsed.phone,
+          role: 'ADMIN',
+          centerId: newCenter.id,
+        }
+      });
+
+      return { centerId: newCenter.id };
     });
 
     return NextResponse.json({ 
       success: true,
       message: `Markaz muvaffaqiyatli ro'yxatdan o'tkazildi`, 
-      centerId: newCenter.id 
+      centerId: result.centerId 
     }, { status: 201 });
 
   } catch (err) {
     if (err instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Ma\'lumotlar xato kiritildi' }, { status: 400 });
+      return NextResponse.json({ 
+        error: 'Ma\'lumotlar xato kiritildi',
+        details: err.errors 
+      }, { status: 400 });
     }
-    console.error(err);
-    return NextResponse.json({ error: 'Serverda xatolik yuz berdi' }, { status: 500 });
+    
+    console.error("Registration Error:", err);
+    return NextResponse.json({ 
+      error: 'Serverda xatolik yuz berdi. Balki bu Telegram ID allaqachon banddir?' 
+    }, { status: 500 });
+  } finally {
+    await prisma.$disconnect();
   }
 }
