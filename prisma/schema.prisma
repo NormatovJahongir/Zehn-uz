@@ -16,7 +16,8 @@ model User {
   role       String   @default("STUDENT") 
   firstName  String
   lastName   String?
-  
+  phone      String?
+
   // Agar role 'ADMIN', 'TEACHER' yoki 'STUDENT' bo'lsa, bu maydon to'ldiriladi.
   // Agar 'SUPER_ADMIN' bo'lsa, bu null qoladi (chunki u butun tizim egasi).
   centerId   String?  
@@ -48,3 +49,4 @@ model Subject {
   centerId  String
   center    Center   @relation(fields: [centerId], references: [id])
 }
+
