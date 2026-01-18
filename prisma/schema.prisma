@@ -10,20 +10,23 @@ datasource db {
 model User {
   id         String   @id @default(uuid())
   telegramId String?  @unique
+  
+  // LOGIN VA PAROL TIZIMI UCHUN
+  username   String   @unique // Adminlar tizimga kirishi uchun login
+  password   String   // Hashlangan parol saqlanadi
+  
   email      String?  @unique
-  password   String?
-  // Role: 'SUPER_ADMIN', 'ADMIN', 'TEACHER', 'STUDENT'
-  role       String   @default("STUDENT") 
+  role       String   @default("STUDENT") // 'SUPER_ADMIN', 'ADMIN', 'TEACHER', 'STUDENT'
   firstName  String
   lastName   String?
   phone      String?
 
-  // Agar role 'ADMIN', 'TEACHER' yoki 'STUDENT' bo'lsa, bu maydon to'ldiriladi.
-  // Agar 'SUPER_ADMIN' bo'lsa, bu null qoladi (chunki u butun tizim egasi).
+  // Markaz bilan bog'liqlik
   centerId   String?  
   center     Center?  @relation(fields: [centerId], references: [id])
   
   createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt // Ma'lumot yangilanganda avtomat o'zgaradi
 }
 
 model Center {
@@ -31,6 +34,7 @@ model Center {
   name       String
   adminName  String?   // Markaz rahbari ismi
   phone      String?
+  address    String?   // Markaz manzili (matn ko'rinishida)
   latitude   Float?    @default(0)
   longitude  Float?    @default(0)
   
@@ -49,4 +53,3 @@ model Subject {
   centerId  String
   center    Center   @relation(fields: [centerId], references: [id])
 }
-
