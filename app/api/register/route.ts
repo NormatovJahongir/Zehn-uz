@@ -1,13 +1,12 @@
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import * as z from 'zod';
-import bcrypt from 'bcryptjs'; // Parolni shifrlash uchun
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
-// Ma'lumotlarni tekshirish sxemasi (Zod)
 const registerSchema = z.object({
-  telegramId: z.string().optional(),
+  telegramId: z.string().optional().nullable(),
   centerName: z.string().min(2, "Markaz nomi juda qisqa"),
   adminName: z.string().min(2, "Ism juda qisqa"),
   username: z.string().min(4, "Login kamida 4 ta harf bo'lsin"),
@@ -20,22 +19,21 @@ export async function POST(request: Request) {
     const body = await request.json();
     const parsed = registerSchema.parse(body);
 
-    // 1. Login (username) band emasligini tekshirish
-    const existingUser = await prisma.user.findUnique({
+    // 1. Username band emasligini tekshirish
+    const existingUserByUsername = await prisma.user.findUnique({
       where: { username: parsed.username }
     });
 
-    if (existingUser) {
+    if (existingUserByUsername) {
       return NextResponse.json(
         { error: 'Bu login allaqachon band. Boshqa login tanlang.' }, 
         { status: 400 }
       );
     }
 
-    // 2. Parolni shifrlash
     const hashedPassword = await bcrypt.hash(parsed.password, 10);
 
-    // 3. Tranzaksiya orqali bazaga yozish
+    // 2. Tranzaksiya orqali bazaga yozish
     const result = await prisma.$transaction(async (tx) => {
       // Markaz yaratish
       const newCenter = await tx.center.create({
@@ -46,27 +44,43 @@ export async function POST(request: Request) {
         }
       });
 
-      // Adminni yaratish yoki yangilash
-      const user = await tx.user.upsert({
-        where: { username: parsed.username },
-        update: {
-          telegramId: parsed.telegramId,
-          password: hashedPassword,
-          firstName: parsed.adminName,
-          phone: parsed.phone,
-          role: 'ADMIN',
-          centerId: newCenter.id,
-        },
-        create: {
-          username: parsed.username,
-          password: hashedPassword,
-          telegramId: parsed.telegramId,
-          firstName: parsed.adminName,
-          phone: parsed.phone,
-          role: 'ADMIN',
-          centerId: newCenter.id,
-        }
-      });
+      let user;
+
+      // MUHIM: Agar foydalanuvchi avval botdan o'tgan bo'lsa (telegramId bo'lsa)
+      if (parsed.telegramId) {
+        user = await tx.user.upsert({
+          where: { telegramId: parsed.telegramId }, // telegramId orqali qidiramiz
+          update: {
+            username: parsed.username,
+            password: hashedPassword,
+            firstName: parsed.adminName,
+            phone: parsed.phone,
+            role: 'ADMIN',
+            centerId: newCenter.id,
+          },
+          create: {
+            telegramId: parsed.telegramId,
+            username: parsed.username,
+            password: hashedPassword,
+            firstName: parsed.adminName,
+            phone: parsed.phone,
+            role: 'ADMIN',
+            centerId: newCenter.id,
+          }
+        });
+      } else {
+        // Agar telegramId bo'lmasa, shunchaki yangi user yaratamiz
+        user = await tx.user.create({
+          data: {
+            username: parsed.username,
+            password: hashedPassword,
+            firstName: parsed.adminName,
+            phone: parsed.phone,
+            role: 'ADMIN',
+            centerId: newCenter.id,
+          }
+        });
+      }
 
       return { centerId: newCenter.id };
     });
