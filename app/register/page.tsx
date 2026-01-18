@@ -4,6 +4,15 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { LayoutGrid, Building2, Phone, User, ArrowRight } from 'lucide-react';
 
+// TypeScript uchun Telegram WebApp turlarini e'lon qilish
+declare global {
+  interface Window {
+    Telegram?: {
+      WebApp: any;
+    };
+  }
+}
+
 export default function RegisterCenter() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
