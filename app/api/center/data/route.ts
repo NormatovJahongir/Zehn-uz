@@ -1,19 +1,31 @@
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { type, name, price, phone, centerId, specialization, subjectId } = body;
+    const { type, name, price, phone, centerId } = body;
+
+    // centerId majburiyligini tekshirish
+    if (!centerId) {
+      return NextResponse.json({ error: 'Center ID topilmadi' }, { status: 400 });
+    }
 
     let result;
+    // Tasodifiy son username takrorlanmasligi uchun
+    const randomId = Math.floor(Math.random() * 1000);
 
     switch (type) {
       case 'subjects':
         result = await prisma.subject.create({
-          data: { name, price: parseFloat(price), centerId }
+          data: { 
+            name, 
+            price: parseFloat(price) || 0, 
+            centerId 
+          }
         });
         break;
       
@@ -22,8 +34,13 @@ export async function POST(request: Request) {
           data: { 
             firstName: name, 
             role: 'TEACHER', 
-            centerId,
-            // phone va specialization uchun Prisma schemada maydonlar bo'lishi kerak
+            phone: phone || null,
+            // User modelidagi majburiy maydonlar:
+            username: `teacher_${randomId}_${Date.now()}`,
+            password: await bcrypt.hash('teacher123', 10),
+            center: {
+              connect: { id: centerId } // centerId ni bog'lashning xavfsiz usuli
+            }
           }
         });
         break;
@@ -33,8 +50,13 @@ export async function POST(request: Request) {
           data: { 
             firstName: name, 
             role: 'STUDENT', 
-            centerId,
-            // subjectId (qaysi kursga yozilgani)
+            phone: phone || null,
+            // User modelidagi majburiy maydonlar:
+            username: `student_${randomId}_${Date.now()}`,
+            password: await bcrypt.hash('student123', 10),
+            center: {
+              connect: { id: centerId }
+            }
           }
         });
         break;
@@ -45,7 +67,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, data: result }, { status: 201 });
   } catch (err) {
-    console.error(err);
-    return NextResponse.json({ error: 'Serverda xatolik' }, { status: 500 });
+    console.error("Data API Error:", err);
+    return NextResponse.json({ error: 'Serverda xatolik yuz berdi' }, { status: 500 });
   }
 }
