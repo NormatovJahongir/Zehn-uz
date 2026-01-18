@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css"; 
 import Link from "next/link";
+import Script from "next/script"; // Script komponentini qo'shdik
 import { 
   GraduationCap, Home, MapPinned, 
   LayoutDashboard, LogOut, LogIn, 
@@ -20,13 +21,19 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // --- TUZATISH: userRole tipini string deb e'lon qilamiz ---
-  // Bu TypeScript-ga 'student' qiymati kelajakda boshqa string bo'lishi mumkinligini aytadi
+  // Kelajakda bu yerda haqiqiy auth mantiqi bo'ladi
   const isLoggedIn: boolean = false; 
   const userRole: string = 'student'; 
 
   return (
     <html lang="uz">
+      <head>
+        {/* TELEGRAM WEB APP SCRIPT - BU JUDA MUHIM */}
+        <Script 
+          src="https://telegram.org/js/telegram-web-app.js" 
+          strategy="beforeInteractive" 
+        />
+      </head>
       <body className={`${inter.className} min-h-screen flex flex-col bg-gray-50 text-gray-900 antialiased`}>
         
         {/* Navigation */}
