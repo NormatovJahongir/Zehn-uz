@@ -19,12 +19,12 @@ export async function POST(request: Request) {
     const body = await request.json();
     const parsed = registerSchema.parse(body);
 
-    // 1. Username band emasligini tekshirish
-    const existingUserByUsername = await prisma.user.findUnique({
+    // 1. Username bandligini tranzaksiyadan tashqarida tekshiramiz (tezlik uchun)
+    const existingUser = await prisma.user.findUnique({
       where: { username: parsed.username }
     });
 
-    if (existingUserByUsername) {
+    if (existingUser && existingUser.telegramId !== parsed.telegramId) {
       return NextResponse.json(
         { error: 'Bu login allaqachon band. Boshqa login tanlang.' }, 
         { status: 400 }
@@ -33,7 +33,7 @@ export async function POST(request: Request) {
 
     const hashedPassword = await bcrypt.hash(parsed.password, 10);
 
-    // 2. Tranzaksiya orqali bazaga yozish
+    // 2. Tranzaksiya
     const result = await prisma.$transaction(async (tx) => {
       // Markaz yaratish
       const newCenter = await tx.center.create({
@@ -44,12 +44,11 @@ export async function POST(request: Request) {
         }
       });
 
-      let user;
-
-      // MUHIM: Agar foydalanuvchi avval botdan o'tgan bo'lsa (telegramId bo'lsa)
+      // Foydalanuvchini boshqarish
       if (parsed.telegramId) {
-        user = await tx.user.upsert({
-          where: { telegramId: parsed.telegramId }, // telegramId orqali qidiramiz
+        // Bot orqali kelgan bo'lsa - upsert (telegramId bo'yicha)
+        await tx.user.upsert({
+          where: { telegramId: parsed.telegramId },
           update: {
             username: parsed.username,
             password: hashedPassword,
@@ -69,8 +68,8 @@ export async function POST(request: Request) {
           }
         });
       } else {
-        // Agar telegramId bo'lmasa, shunchaki yangi user yaratamiz
-        user = await tx.user.create({
+        // Botdan emas, to'g'ridan-to'g'ri saytdan kelgan bo'lsa
+        await tx.user.create({
           data: {
             username: parsed.username,
             password: hashedPassword,
