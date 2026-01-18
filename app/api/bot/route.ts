@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs'; // Parolni hash qilish uchun
 
 const prisma = new PrismaClient();
 const TOKEN = process.env.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN;
@@ -33,25 +34,39 @@ export async function POST(request: Request) {
       if (!dbUser) {
         // AGAR FOYDALANUVCHI BO'LMASA -> BAZAGA QO'SHISH
         try {
+          // Default parol yaratish (telegramId asosida)
+          const defaultPassword = await bcrypt.hash(userId, 10);
+          
           dbUser = await prisma.user.create({
             data: {
               telegramId: userId,
               firstName: from.first_name || "Foydalanuvchi",
               lastName: from.last_name || "",
               role: 'STUDENT', // Default rol
+              // MAJBURIY MAYDONLAR QO'SHILDI
+              username: from.username || `user_${userId}`, 
+              password: defaultPassword,
             }
           });
           console.log("Yangi foydalanuvchi yaratildi:", userId);
         } catch (dbErr) {
           console.error("Bazaga yozishda xato:", dbErr);
-          // Agar bazaga yozishda xato bo'lsa ham xabar yuboramiz
         }
       }
 
-      // 3. Javob xabari
-      const welcomeMessage = dbUser 
-        ? `Xush kelibsiz, ${dbUser.firstName}! Siz tizimda ro'yxatdan o'tgansiz.` 
-        : `Assalomu alaykum! Markazingizni ro'yxatdan o'tkazish uchun quyidagi tugmani bosing:`;
+      // 3. Javob xabari va Web App tugmasi mantiqi
+      let webAppUrl = `${WEB_APP_URL}/register`;
+      let buttonText = "📝 Ro'yxatdan o'tish";
+
+      // Agar foydalanuvchi admin bo'lsa va markazi bo'lsa, dashboardga yuboramiz
+      if (dbUser?.role === 'ADMIN' && dbUser.centerId) {
+        webAppUrl = `${WEB_APP_URL}/center/${dbUser.centerId}`;
+        buttonText = "📊 Boshqaruv paneli";
+      }
+
+      const welcomeMessage = dbUser?.centerId 
+        ? `Xush kelibsiz, ${dbUser.firstName}! Markazingiz boshqaruv paneliga kirishingiz mumkin.` 
+        : `Assalomu alaykum! O'quv markazingizni ro'yxatdan o'tkazish uchun quyidagi tugmani bosing:`;
 
       await tg('sendMessage', {
         chat_id: chatId,
@@ -59,8 +74,8 @@ export async function POST(request: Request) {
         reply_markup: {
           inline_keyboard: [[
             { 
-              text: dbUser?.role === 'ADMIN' ? "🌐 Boshqaruv paneli" : "📝 Ro'yxatdan o'tish", 
-              web_app: { url: dbUser?.role === 'ADMIN' ? WEB_APP_URL : `${WEB_APP_URL}/register` } 
+              text: buttonText, 
+              web_app: { url: webAppUrl } 
             }
           ]]
         }
@@ -69,8 +84,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ ok: true });
   } catch (error) {
-    // Render Logs bo'limida ko'rinadi
     console.error("Bot API Error:", error);
-    return NextResponse.json({ ok: true }); // Telegramga har doim 200 qaytargan ma'qul, aks holda qayta-qayta yuboraveradi
+    return NextResponse.json({ ok: true }); 
   }
 }
