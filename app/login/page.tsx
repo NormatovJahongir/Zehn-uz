@@ -4,18 +4,9 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   GraduationCap, LineChart, Users, Smartphone, 
-  User, Lock, LogIn, Send, ArrowLeft, AlertCircle 
+  User, Lock, LogIn, Send, ArrowLeft, AlertCircle, UserPlus 
 } from 'lucide-react';
 import Link from 'next/link';
-
-<div className="mt-6 text-center">
-  <p className="text-sm text-gray-600">
-    O'quv markazingiz hali yo'qmi?{' '}
-    <Link href="/register" className="text-blue-600 font-bold hover:underline">
-      Ro'yxatdan o'tish
-    </Link>
-  </p>
-</div>
 
 export default function LoginPage() {
   const router = useRouter();
@@ -41,7 +32,6 @@ export default function LoginPage() {
       const data = await response.json();
 
       if (response.ok) {
-        // Muvaffaqiyatli kirganda markaz sahifasiga yo'naltirish
         if (data.centerId) {
           router.push(`/center/${data.centerId}`);
         } else if (data.role === 'SUPER_ADMIN') {
@@ -61,7 +51,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4 font-sans">
-      <div className="max-w-5xl w-full bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row min-h-[600px]">
+      <div className="max-w-5xl w-full bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row min-h-[650px]">
         
         {/* Chap tomon: Xususiyatlar */}
         <div className="md:w-1/2 bg-blue-600 p-12 text-white flex flex-col justify-between">
@@ -147,6 +137,17 @@ export default function LoginPage() {
               </button>
             </form>
 
+            {/* Ro'yxatdan o'tish qismi - Yangi qo'shilgan */}
+            <div className="mt-8 pt-6 border-t border-gray-100 text-center">
+              <p className="text-sm text-gray-600 mb-3">O'quv markazingiz hali yo'qmi?</p>
+              <Link 
+                href="/register" 
+                className="w-full border-2 border-dashed border-gray-200 text-blue-600 py-3 rounded-xl font-bold hover:bg-blue-50 hover:border-blue-200 transition flex items-center justify-center gap-2"
+              >
+                <UserPlus size={18} /> Markazni ro'yxatdan o'tkazish
+              </Link>
+            </div>
+
             <div className="relative my-8 text-center">
               <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200"></div></div>
               <span className="relative bg-white px-4 text-sm text-gray-400">yoki</span>
@@ -161,8 +162,8 @@ export default function LoginPage() {
               <Send size={18} className="fill-current" /> Telegram orqali kirish
             </a>
 
-            <div className="space-y-4 text-center">
-              <Link href="/" className="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline font-medium">
+            <div className="text-center">
+              <Link href="/" className="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-blue-600 transition font-medium">
                 <ArrowLeft size={16} /> Bosh sahifaga qaytish
               </Link>
             </div>
@@ -186,4 +187,3 @@ function FeatureItem({ icon: Icon, title, desc }: any) {
     </div>
   );
 }
-
