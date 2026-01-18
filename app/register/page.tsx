@@ -25,7 +25,7 @@ export default function RegisterCenter() {
 
   useEffect(() => {
     // Telegram Web App ma'lumotlarini olish
-    if (window.Telegram?.WebApp) {
+    if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
       const tg = window.Telegram.WebApp;
       tg.expand(); // Oynani to'liq ochish
       
@@ -34,7 +34,7 @@ export default function RegisterCenter() {
         setFormData(prev => ({
           ...prev,
           telegramId: user.id.toString(),
-          adminName: `${user.first_name} ${user.last_name || ''}`.trim()
+          adminName: `${user.first_name || ''} ${user.last_name || ''}`.trim()
         }));
       }
     }
@@ -42,11 +42,17 @@ export default function RegisterCenter() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!formData.telegramId) {
+      alert("Telegram ma'lumotlari topilmadi. Iltimos, bot orqali kiring.");
+      return;
+    }
+
     setLoading(true);
 
     try {
-      // API ga so'rov yuborish (Keyingi qadamda API ni yozamiz)
-      const response = await fetch('/api/admin/register', {
+      // API manzilini /api/register ga o'zgartirdik (fayl manzilingizga moslab)
+      const response = await fetch('/api/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
@@ -54,14 +60,15 @@ export default function RegisterCenter() {
 
       const data = await response.json();
 
-      if (response.ok) {
+      if (response.ok && data.centerId) {
         // Muvaffaqiyatli ro'yxatdan o'tgach, dashboardga o'tish
         router.push(`/center/${data.centerId}`);
       } else {
-        alert(data.message || "Xatolik yuz berdi");
+        alert(data.error || data.message || "Xatolik yuz berdi");
       }
     } catch (error) {
       console.error("Register error:", error);
+      alert("Server bilan ulanishda xatolik yuz berdi");
     } finally {
       setLoading(false);
     }
