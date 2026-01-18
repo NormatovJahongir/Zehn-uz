@@ -57,15 +57,20 @@ export async function POST(request: Request) {
         break;
 
       case 'teachers':
-        result = await prisma.user.create({
-          data: {
-            firstName: name,
-            role: 'TEACHER',
-            centerId: centerId,
-            // lastName yoki phone kabi maydonlarni ham schemaga qarab qo'shish mumkin
-          }
-        });
-        break;
+  result = await prisma.user.create({
+    data: {
+      firstName: name,
+      role: 'TEACHER',
+      // MUHIM: Schemada username va password majburiy, 
+      // shuning uchun vaqtincha yoki generatsiya qilingan qiymat berish kerak
+      username: `teacher_${Date.now()}`, 
+      password: await bcrypt.hash('teacher123', 10), // Default parol
+      center: {
+        connect: { id: centerId } // centerId: centerId o'rniga shu usul xavfsizroq
+      }
+    }
+  });
+  break;
 
       case 'students':
         result = await prisma.user.create({
