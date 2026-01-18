@@ -8,6 +8,15 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
+<div className="mt-6 text-center">
+  <p className="text-sm text-gray-600">
+    O'quv markazingiz hali yo'qmi?{' '}
+    <Link href="/register" className="text-blue-600 font-bold hover:underline">
+      Ro'yxatdan o'tish
+    </Link>
+  </p>
+</div>
+
 export default function LoginPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -177,3 +186,4 @@ function FeatureItem({ icon: Icon, title, desc }: any) {
     </div>
   );
 }
+
