@@ -5,16 +5,15 @@ import 'leaflet/dist/leaflet.css';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 
+// 1. Props nomlarini page.tsx dagi chaqiruvga moslashtiramiz
 type Props = {
-  initialPosition?: [number, number];
+  initialPos?: [number, number]; // initialPosition -> initialPos
   zoom?: number;
-  // called whenever the user picks/moves the marker
-  onChange?: (lat: number, lng: number) => void;
+  onLocationSelect?: (location: { lat: number; lng: number }) => void; // onChange -> onLocationSelect
 };
 
 const DefaultZoom = 13;
 
-// Use a simple HTML/CSS based marker to avoid image asset issues in Next.js
 const htmlMarker = L.divIcon({
   className: 'custom-div-icon',
   html: `<div style="
@@ -31,48 +30,48 @@ const htmlMarker = L.divIcon({
 
 function ClickHandler({
   setPosition,
-  onChange,
+  onLocationSelect,
 }: {
   setPosition: (p: [number, number]) => void;
-  onChange?: (lat: number, lng: number) => void;
+  onLocationSelect?: (location: { lat: number; lng: number }) => void;
 }) {
   useMapEvents({
     click(e) {
       const lat = Number(e.latlng.lat.toFixed(6));
       const lng = Number(e.latlng.lng.toFixed(6));
       setPosition([lat, lng]);
-      onChange?.(lat, lng);
+      onLocationSelect?.({ lat, lng });
     },
   });
   return null;
 }
 
-export default function MapPicker({ initialPosition = [41.311081, 69.240562], zoom = DefaultZoom, onChange }: Props) {
-  const [position, setPosition] = React.useState<[number, number]>(initialPosition);
+export default function MapPicker({ 
+  initialPos = [41.311081, 69.240562], 
+  zoom = DefaultZoom, 
+  onLocationSelect 
+}: Props) {
+  const [position, setPosition] = React.useState<[number, number]>(initialPos);
 
-  // when marker is dragged, update position & notify parent
   function onMarkerDragEnd(e: L.DragEndEvent) {
     const marker = e.target;
     const latlng = marker.getLatLng();
     const lat = Number(latlng.lat.toFixed(6));
     const lng = Number(latlng.lng.toFixed(6));
     setPosition([lat, lng]);
-    onChange?.(lat, lng);
+    onLocationSelect?.({ lat, lng });
   }
 
   return (
     <div className="space-y-4">
-      {/* Map */}
       <div className="h-80 rounded-lg overflow-hidden shadow-sm">
         <MapContainer center={position} zoom={zoom} style={{ height: '100%', width: '100%' }}>
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
-          {/* allow clicking on the map to set marker */}
-          <ClickHandler setPosition={setPosition} onChange={onChange} />
+          <ClickHandler setPosition={setPosition} onLocationSelect={onLocationSelect} />
 
-          {/* draggable marker using divIcon */}
           <Marker
             position={position}
             icon={htmlMarker}
@@ -82,7 +81,6 @@ export default function MapPicker({ initialPosition = [41.311081, 69.240562], zo
         </MapContainer>
       </div>
 
-      {/* Coordinates panel */}
       <div className="bg-white rounded-lg p-3 shadow border flex flex-col sm:flex-row sm:items-center gap-3">
         <div className="flex-1 grid grid-cols-2 gap-2">
           <div>
@@ -107,25 +105,21 @@ export default function MapPicker({ initialPosition = [41.311081, 69.240562], zo
           <button
             type="button"
             onClick={() => {
-              // center map on current position by updating state to the same value,
-              // MapContainer will keep center but a nicer behaviour would be to use map instance.
-              // Parent apps can take the coords via onChange and perform persistence.
-              onChange?.(position[0], position[1]);
+              onLocationSelect?.({ lat: position[0], lng: position[1] });
             }}
-            className="px-3 py-1 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700"
+            className="px-3 py-1 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-bold"
           >
-            Use these coordinates
+            Tanlash
           </button>
 
           <button
             type="button"
             onClick={() => {
-              // reset to a default (could be adjusted)
               const defaultPos: [number, number] = [41.311081, 69.240562];
               setPosition(defaultPos);
-              onChange?.(defaultPos[0], defaultPos[1]);
+              onLocationSelect?.({ lat: defaultPos[0], lng: defaultPos[1] });
             }}
-            className="px-3 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200"
+            className="px-3 py-1 text-sm bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors font-bold"
           >
             Reset
           </button>
