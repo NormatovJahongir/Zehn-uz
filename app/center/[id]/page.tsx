@@ -5,56 +5,34 @@ import {
   GraduationCap, Users, BookOpen, Plus, 
   UserCheck, Settings, Trash2, Save, X, Loader2,
   TrendingUp, CreditCard, ChevronRight, LayoutDashboard,
-  Bell, CalendarCheck, Receipt, School, BarChart3
+  CalendarCheck, Receipt, School, BarChart3, Map as MapIcon, ShoppingBag, Edit3
 } from 'lucide-react';
-
-// Grafiklar uchun (Agar npm orqali o'rnatilmagan bo'lsa, xatolik bermasligi uchun shartli tekshirish qo'shish mumkin)
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  ArcElement
-} from 'chart.js';
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
 import { Line, Doughnut } from 'react-chartjs-2';
 
-ChartJS.register(
-  CategoryScale, LinearScale, PointElement, 
-  LineElement, Title, Tooltip, Legend, ArcElement
-);
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, ArcElement);
+
+type TabType = 'dashboard' | 'subjects' | 'teachers' | 'students' | 'marketplace' | 'map';
 
 export default function CenterAdminPage({ params }: { params: { id: string } }) {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'subjects' | 'teachers' | 'students'>('dashboard');
+  const [activeTab, setActiveTab] = useState<TabType>('dashboard');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   
+  const [centerName, setCenterName] = useState("O'quv Markazi");
   const [subjects, setSubjects] = useState([]);
   const [teachers, setTeachers] = useState([]);
   const [students, setStudents] = useState([]);
 
   const [formData, setFormData] = useState({
+    id: '', // Tahrirlash uchun
     name: '',
     price: '',
     phone: '',
+    subjectId: '', // Ustoz yoki o'quvchi uchun
+    teacherId: '', // O'quvchi uchun
   });
-
-  // Grafik ma'lumotlari (Dummy data)
-  const lineData = {
-    labels: ['Yan', 'Fev', 'Mar', 'Apr', 'May', 'Iyun'],
-    datasets: [{
-      label: "O'quvchilar o'sishi",
-      data: [65, 80, 120, 190, 240, 310],
-      borderColor: '#2563eb',
-      backgroundColor: 'rgba(37, 99, 235, 0.1)',
-      tension: 0.4,
-      fill: true
-    }]
-  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -62,12 +40,13 @@ export default function CenterAdminPage({ params }: { params: { id: string } }) 
         const res = await fetch(`/api/center/data?centerId=${params.id}`);
         const data = await res.json();
         if (data.success) {
+          setCenterName(data.centerName || "Markaz nomi");
           setSubjects(data.subjects || []);
           setTeachers(data.teachers || []);
           setStudents(data.students || []);
         }
       } catch (err) {
-        console.error("Ma'lumot yuklashda xato:", err);
+        console.error("Xato:", err);
       } finally {
         setInitialLoading(false);
       }
@@ -79,52 +58,61 @@ export default function CenterAdminPage({ params }: { params: { id: string } }) 
     e.preventDefault();
     setLoading(true);
     try {
+      const method = formData.id ? 'PUT' : 'POST';
       const response = await fetch('/api/center/data', {
-        method: 'POST',
+        method: method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: activeTab === 'dashboard' ? 'subjects' : activeTab,
-          centerId: params.id,
-          name: formData.name,
-          price: formData.price,
-          phone: formData.phone,
-        }),
+        body: JSON.stringify({ ...formData, type: activeTab, centerId: params.id }),
       });
-      const result = await response.json();
+      
       if (response.ok) {
-        if (activeTab === 'subjects') setSubjects([...subjects, result.data]);
-        if (activeTab === 'teachers') setTeachers([...teachers, result.data]);
-        if (activeTab === 'students') setStudents([...students, result.data]);
-        setIsModalOpen(false);
-        setFormData({ name: '', price: '', phone: '' });
+        // Ma'lumotlarni qayta yuklash (soddalik uchun)
+        window.location.reload();
       }
     } catch (err) {
-      alert("Xatolik yuz berdi");
+      alert("Xatolik!");
     } finally {
       setLoading(false);
     }
   };
 
-  if (initialLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Loader2 className="animate-spin text-blue-600" size={40} />
-      </div>
-    );
-  }
+  const openModal = (item?: any) => {
+    if (item) {
+      setFormData({
+        id: item.id,
+        name: item.name || item.firstName || '',
+        price: item.price || '',
+        phone: item.phone || '',
+        subjectId: item.subjectId || '',
+        teacherId: item.teacherId || '',
+      });
+    } else {
+      setFormData({ id: '', name: '', price: '', phone: '', subjectId: '', teacherId: '' });
+    }
+    setIsModalOpen(true);
+  };
+
+  if (initialLoading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin text-blue-600" size={40} /></div>;
 
   return (
     <div className="min-h-screen bg-[#F0F2F5] flex">
-      {/* Sidebar - Professional yon menyu */}
-      <aside className="w-72 bg-[#1E293B] text-white hidden lg:flex flex-col sticky top-0 h-screen shadow-2xl">
-        <div className="p-8 flex items-center gap-3 border-b border-slate-700">
-          <div className="bg-blue-600 p-2 rounded-xl rotate-3">
-            <GraduationCap size={28} />
+      {/* Sidebar */}
+      <aside className="w-72 bg-[#1E293B] text-white hidden lg:flex flex-col sticky top-0 h-screen shadow-2xl z-40">
+        <div className="p-8 border-b border-slate-700">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="bg-blue-600 p-2 rounded-xl"><School size={24} /></div>
+            <span className="text-xl font-black tracking-tighter">EduMarket</span>
           </div>
-          <span className="text-xl font-black tracking-tighter">EduMarket</span>
+          
+          {/* Marketplace & Xarita sarlavhalari yuqorida */}
+          <div className="space-y-1">
+            <SidebarLink icon={ShoppingBag} label="Marketplace" active={activeTab === 'marketplace'} onClick={() => setActiveTab('marketplace')} />
+            <SidebarLink icon={MapIcon} label="Xarita" active={activeTab === 'map'} onClick={() => setActiveTab('map')} />
+          </div>
         </div>
 
-        <nav className="flex-1 px-4 py-6 space-y-2">
+        <nav className="flex-1 px-4 py-6 space-y-1">
+          <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest px-4 mb-2">Management</p>
           <SidebarLink icon={LayoutDashboard} label="Dashboard" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
           <SidebarLink icon={BookOpen} label="Fanlar" active={activeTab === 'subjects'} onClick={() => setActiveTab('subjects')} />
           <SidebarLink icon={UserCheck} label="Ustozlar" active={activeTab === 'teachers'} onClick={() => setActiveTab('teachers')} />
@@ -136,86 +124,128 @@ export default function CenterAdminPage({ params }: { params: { id: string } }) 
 
       {/* Main Content */}
       <main className="flex-1 min-w-0">
-        <header className="bg-white/80 backdrop-blur-md border-b h-20 flex items-center justify-between px-8 sticky top-0 z-30 shadow-sm">
-          <h1 className="text-xl font-bold text-gray-800 capitalize">{activeTab} Paneli</h1>
-          <div className="flex items-center gap-4">
-            <div className="hidden md:flex flex-col text-right">
-              <span className="text-sm font-bold text-gray-900">Admin User</span>
-              <span className="text-[10px] text-blue-600 font-bold uppercase tracking-widest">ID: {params.id}</span>
-            </div>
-            <button onClick={() => setIsModalOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-xl shadow-lg transition-transform active:scale-90">
-              <Plus size={20} />
-            </button>
-          </div>
+        <header className="bg-white border-b h-20 flex items-center justify-between px-8 sticky top-0 z-30 shadow-sm">
+          <h1 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+             <span className="text-blue-600">{centerName}</span> 
+             <ChevronRight size={16} className="text-gray-400" />
+             <span className="capitalize">{activeTab}</span>
+          </h1>
+          
+          <button onClick={() => openModal()} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg shadow-blue-100">
+            <Plus size={20} /> Qo'shish
+          </button>
         </header>
 
         <div className="p-8 space-y-8">
-          {/* Dashboard Stats View */}
-          {activeTab === 'dashboard' && (
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatCard icon={BookOpen} label="Fanlar" value={subjects.length} color="blue" />
-                <StatCard icon={UserCheck} label="Ustozlar" value={teachers.length} color="purple" />
-                <StatCard icon={Users} label="O'quvchilar" value={students.length} color="green" />
-                <StatCard icon={TrendingUp} label="Daromad" value="12,5M" color="orange" />
-              </div>
-
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-                <div className="bg-white p-6 rounded-[32px] border shadow-sm">
-                  <h3 className="font-bold text-gray-800 mb-6 flex items-center gap-2">
-                    <BarChart3 className="text-blue-600" size={20} /> O'quvchilar dinamikasi
-                  </h3>
-                  <div className="h-64">
-                    <Line data={lineData} options={{ responsive: true, maintainAspectRatio: false }} />
+          {activeTab === 'dashboard' && <DashboardView subjects={subjects} teachers={teachers} students={students} />}
+          
+          {/* Subjects View */}
+          {activeTab === 'subjects' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {subjects.map((sub: any) => (
+                <div key={sub.id} className="bg-white p-6 rounded-[28px] border hover:shadow-xl transition-all group">
+                  <div className="flex justify-between items-start">
+                    <div className="bg-blue-50 text-blue-600 p-3 rounded-2xl"><BookOpen size={24} /></div>
+                    <div className="flex gap-2">
+                       <button onClick={() => openModal(sub)} className="text-gray-400 hover:text-blue-600 p-1"><Edit3 size={18} /></button>
+                       <button className="text-gray-400 hover:text-red-600 p-1"><Trash2 size={18} /></button>
+                    </div>
                   </div>
+                  <h3 className="font-black text-gray-800 text-xl mt-4">{sub.name}</h3>
+                  <p className="text-blue-600 font-bold mt-1 text-lg">{sub.price?.toLocaleString()} so'm</p>
                 </div>
-                <div className="bg-white p-6 rounded-[32px] border shadow-sm">
-                  <h3 className="font-bold text-gray-800 mb-6 flex items-center gap-2">
-                    <Receipt className="text-orange-600" size={20} /> To'lovlar holati
-                  </h3>
-                  <div className="h-64 flex justify-center">
-                    <Doughnut data={{
-                      labels: ["To'langan", "Qarzdor"],
-                      datasets: [{ data: [75, 25], backgroundColor: ['#10b981', '#f43f5e'] }]
-                    }} options={{ responsive: true, maintainAspectRatio: false }} />
-                  </div>
-                </div>
-              </div>
-            </>
+              ))}
+            </div>
           )}
 
-          {/* List Views */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {activeTab === 'subjects' && subjects.map((sub: any) => (
-              <div key={sub.id} className="bg-white p-6 rounded-[28px] border hover:shadow-xl transition-all relative overflow-hidden group">
-                <div className="absolute -top-4 -right-4 w-16 h-16 bg-blue-50 rounded-full group-hover:scale-150 transition-transform" />
-                <h3 className="font-black text-gray-800 text-xl relative z-10">{sub.name}</h3>
-                <p className="text-blue-600 font-bold mt-2">{sub.price?.toLocaleString()} so'm</p>
-                <button className="mt-4 text-gray-300 hover:text-red-500 transition-colors"><Trash2 size={18} /></button>
-              </div>
-            ))}
-            {/* O'qituvchilar va O'quvchilar ro'yxati shu yerda */}
-          </div>
+          {/* Teachers View */}
+          {activeTab === 'teachers' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {teachers.map((t: any) => (
+                <div key={t.id} className="bg-white p-6 rounded-[28px] border flex items-center gap-4">
+                  <div className="w-16 h-16 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center"><UserCheck size={32} /></div>
+                  <div className="flex-1">
+                    <h3 className="font-bold text-gray-800 text-lg">{t.name || t.firstName}</h3>
+                    <p className="text-sm text-gray-500">{t.phone}</p>
+                    <div className="mt-2 flex gap-2">
+                      <span className="bg-purple-50 text-purple-600 text-[10px] px-2 py-1 rounded-md font-bold uppercase tracking-widest">
+                        {subjects.find((s: any) => s.id === t.subjectId)?.name || "Fan biriktirilmagan"}
+                      </span>
+                    </div>
+                  </div>
+                  <button onClick={() => openModal(t)} className="text-gray-300 hover:text-blue-600"><Edit3 size={20} /></button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Students View */}
+          {activeTab === 'students' && (
+            <div className="bg-white rounded-[32px] border overflow-hidden">
+               <table className="w-full text-left">
+                  <thead className="bg-gray-50 border-b">
+                    <tr>
+                      <th className="px-6 py-4 font-bold text-gray-400 text-xs uppercase tracking-widest">Ism</th>
+                      <th className="px-6 py-4 font-bold text-gray-400 text-xs uppercase tracking-widest">Fan</th>
+                      <th className="px-6 py-4 font-bold text-gray-400 text-xs uppercase tracking-widest">Ustoz</th>
+                      <th className="px-6 py-4 font-bold text-gray-400 text-xs uppercase tracking-widest text-right">Amal</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {students.map((s: any) => (
+                      <tr key={s.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 font-bold text-gray-800">{s.name || s.firstName}</td>
+                        <td className="px-6 py-4 text-sm">{subjects.find((sub: any) => sub.id === s.subjectId)?.name || "—"}</td>
+                        <td className="px-6 py-4 text-sm">{teachers.find((t: any) => t.id === s.teacherId)?.name || "—"}</td>
+                        <td className="px-6 py-4 text-right">
+                          <button onClick={() => openModal(s)} className="text-blue-600 hover:underline font-bold text-xs">Tahrirlash</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+               </table>
+            </div>
+          )}
+
+          {activeTab === 'map' && <div className="bg-white p-10 rounded-[32px] border text-center"><MapIcon size={48} className="mx-auto mb-4 text-gray-300"/><h2 className="text-xl font-bold">Markaz Joylashuvi (Xarita)</h2><p className="text-gray-400">Tez orada xarita integratsiyasi qo'shiladi...</p></div>}
         </div>
       </main>
 
-      {/* Modal - Oldingi koddagi modal saqlab qolindi */}
+      {/* Dynamic Modal Form */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-md rounded-[40px] p-10 shadow-2xl relative animate-in zoom-in duration-300">
-            <button onClick={() => setIsModalOpen(false)} className="absolute top-8 right-8 text-gray-300 hover:text-gray-900">
-              <X size={28} />
-            </button>
-            <h2 className="text-3xl font-black text-gray-900 mb-8">Ma'lumot qo'shish</h2>
-            <form onSubmit={handleSave} className="space-y-6">
-              <input 
-                className="w-full bg-gray-50 border-2 border-transparent rounded-2xl px-5 py-4 focus:border-blue-600 focus:bg-white outline-none transition-all font-medium" 
-                placeholder="Nomi / Ismi" 
-                value={formData.name}
-                onChange={(e) => setFormData({...formData, name: e.target.value})}
-              />
-              <button type="submit" disabled={loading} className="w-full bg-blue-600 text-white py-5 rounded-2xl font-black text-lg shadow-xl hover:bg-blue-700 transition-all flex items-center justify-center gap-3">
-                {loading ? <Loader2 className="animate-spin" size={24} /> : <><Save size={24} /> Saqlash</>}
+          <div className="bg-white w-full max-w-md rounded-[40px] p-10 shadow-2xl relative">
+            <button onClick={() => setIsModalOpen(false)} className="absolute top-8 right-8 text-gray-300 hover:text-gray-900"><X size={28} /></button>
+            <h2 className="text-2xl font-black text-gray-900 mb-6 capitalize">{formData.id ? 'Tahrirlash' : 'Yangi'} - {activeTab}</h2>
+            
+            <form onSubmit={handleSave} className="space-y-4">
+              <input className="w-full bg-gray-50 border-2 border-transparent rounded-2xl px-5 py-3.5 focus:border-blue-600 outline-none transition-all font-medium" placeholder="To'liq nomi" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} required />
+              
+              {activeTab === 'subjects' && (
+                <input type="number" className="w-full bg-gray-50 border-2 border-transparent rounded-2xl px-5 py-3.5 focus:border-blue-600 outline-none transition-all font-bold text-blue-600" placeholder="Kurs narxi" value={formData.price} onChange={(e) => setFormData({...formData, price: e.target.value})} />
+              )}
+
+              {(activeTab === 'teachers' || activeTab === 'students') && (
+                <input className="w-full bg-gray-50 border-2 border-transparent rounded-2xl px-5 py-3.5 focus:border-blue-600 outline-none transition-all font-medium" placeholder="Telefon raqami" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} />
+              )}
+
+              {/* Biriktirish qismlari */}
+              {(activeTab === 'teachers' || activeTab === 'students') && (
+                <select className="w-full bg-gray-50 border-2 border-transparent rounded-2xl px-5 py-3.5 outline-none" value={formData.subjectId} onChange={(e) => setFormData({...formData, subjectId: e.target.value})}>
+                  <option value="">Fan biriktirish</option>
+                  {subjects.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+              )}
+
+              {activeTab === 'students' && (
+                <select className="w-full bg-gray-50 border-2 border-transparent rounded-2xl px-5 py-3.5 outline-none" value={formData.teacherId} onChange={(e) => setFormData({...formData, teacherId: e.target.value})}>
+                  <option value="">Ustoz biriktirish</option>
+                  {teachers.map((t: any) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                </select>
+              )}
+
+              <button type="submit" disabled={loading} className="w-full bg-blue-600 text-white py-4 rounded-2xl font-black shadow-xl hover:bg-blue-700 transition-all flex items-center justify-center gap-3 mt-4">
+                {loading ? <Loader2 className="animate-spin" size={20} /> : <><Save size={20} /> Saqlash</>}
               </button>
             </form>
           </div>
@@ -225,32 +255,41 @@ export default function CenterAdminPage({ params }: { params: { id: string } }) 
   );
 }
 
-// Yordamchi Komponentlar
+// Dashboard View Component
+function DashboardView({ subjects, teachers, students }: any) {
+  return (
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard icon={BookOpen} label="Fanlar" value={subjects.length} color="blue" />
+        <StatCard icon={UserCheck} label="Ustozlar" value={teachers.length} color="purple" />
+        <StatCard icon={Users} label="O'quvchilar" value={students.length} color="green" />
+        <StatCard icon={TrendingUp} label="Daromad" value="12.5M" color="orange" />
+      </div>
+      <div className="bg-white p-8 rounded-[32px] border shadow-sm">
+        <h3 className="font-bold text-gray-800 mb-6">Oylik o'sish ko'rsatkichi</h3>
+        <div className="h-64">
+           {/* Chart qismi shu yerda qoladi */}
+        </div>
+      </div>
+    </>
+  );
+}
+
 function SidebarLink({ icon: Icon, label, active, onClick }: any) {
   return (
-    <button onClick={onClick} className={`w-full flex items-center gap-3 px-6 py-4 rounded-2xl transition-all font-bold ${active ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
+    <button onClick={onClick} className={`w-full flex items-center gap-3 px-6 py-3.5 rounded-2xl transition-all font-bold ${active ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
       <Icon size={20} />
-      <span>{label}</span>
+      <span className="text-sm">{label}</span>
     </button>
   );
 }
 
 function StatCard({ icon: Icon, label, value, color }: any) {
-  const styles: any = {
-    blue: "bg-blue-50 text-blue-600",
-    purple: "bg-purple-50 text-purple-600",
-    green: "bg-emerald-50 text-emerald-600",
-    orange: "bg-orange-50 text-orange-600",
-  };
+  const styles: any = { blue: "bg-blue-50 text-blue-600", purple: "bg-purple-50 text-purple-600", green: "bg-emerald-50 text-emerald-600", orange: "bg-orange-50 text-orange-600" };
   return (
-    <div className="bg-white p-6 rounded-[32px] border shadow-sm flex items-center gap-5 hover:scale-105 transition-transform">
-      <div className={`${styles[color]} w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner`}>
-        <Icon size={28} />
-      </div>
-      <div>
-        <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest">{label}</p>
-        <h3 className="text-2xl font-black text-gray-800">{value}</h3>
-      </div>
+    <div className="bg-white p-6 rounded-[32px] border shadow-sm flex items-center gap-5">
+      <div className={`${styles[color]} w-14 h-14 rounded-2xl flex items-center justify-center`}><Icon size={28} /></div>
+      <div><p className="text-gray-400 text-[10px] font-black uppercase tracking-widest">{label}</p><h3 className="text-2xl font-black text-gray-800">{value}</h3></div>
     </div>
   );
 }
