@@ -3,13 +3,14 @@
 import React from 'react';
 import dynamic from 'next/dynamic';
 
-// Dynamically import the client map so it never runs on the server
-const MapPicker = dynamic(() => import('../../../components/MapPickerClient'), { ssr: false });
+// Komponentni yuklash
+const MapPicker = dynamic(() => import('../../../components/MapPickerClient'), { 
+  ssr: false,
+  loading: () => <div className="h-80 bg-gray-100 animate-pulse rounded-lg flex items-center justify-center">Xarita yuklanmoqda...</div>
+});
 
 export default function AdminSettingsPage() {
-  // savedCoords represents the admin-selected center location in local UI state.
   const [savedCoords, setSavedCoords] = React.useState<{ lat: number; lng: number } | null>(() => {
-    // try hydrate from localStorage for demo persistence
     if (typeof window === 'undefined') return null;
     try {
       const raw = localStorage.getItem('admin:center:coords');
@@ -19,21 +20,21 @@ export default function AdminSettingsPage() {
     }
   });
 
-  // liveCoords are updated as the user interacts with the map; savedCoords only changes when the admin "saves"
   const [liveCoords, setLiveCoords] = React.useState<{ lat: number; lng: number } | null>(
     savedCoords ?? { lat: 41.311081, lng: 69.240562 }
   );
 
-  function handleMapChange(lat: number, lng: number) {
-    setLiveCoords({ lat, lng });
+  // MapPicker dan keladigan obyektni qabul qilish uchun funksiyani moslashtiramiz
+  function handleMapChange(coords: { lat: number; lng: number }) {
+    setLiveCoords(coords);
   }
 
   function handleSave() {
     if (!liveCoords) return;
     setSavedCoords(liveCoords);
-    // persist to localStorage as a demo — replace with API call to persist to DB
     try {
       localStorage.setItem('admin:center:coords', JSON.stringify(liveCoords));
+      alert("Koordinatalar saqlandi!");
     } catch {}
   }
 
@@ -49,46 +50,43 @@ export default function AdminSettingsPage() {
       <div className="max-w-4xl mx-auto">
         <header className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-800">Admin Settings — Center Location</h1>
-            <p className="text-sm text-gray-600">Pick your center on the map. Click the map or drag the marker.</p>
+            <h1 className="text-2xl font-bold text-gray-800">Admin Sozlamalari — Markaz Joylashuvi</h1>
+            <p className="text-sm text-gray-600">Xaritadan markazni tanlang. Marker ustiga bosing yoki uni sudrang.</p>
           </div>
 
           <div className="text-right">
-            <div className="text-xs text-gray-500">Saved coords</div>
-            <div className="text-sm font-medium text-gray-800">
-              {savedCoords ? `${savedCoords.lat}, ${savedCoords.lng}` : 'Not saved'}
+            <div className="text-xs text-gray-500 uppercase font-bold">Saqlangan nuqta</div>
+            <div className="text-sm font-mono text-blue-600 bg-blue-50 px-2 py-1 rounded">
+              {savedCoords ? `${savedCoords.lat.toFixed(4)}, ${savedCoords.lng.toFixed(4)}` : 'Saqlanmagan'}
             </div>
           </div>
         </header>
 
-        <section className="mb-4">
+        <section className="mb-6 bg-white p-4 rounded-2xl shadow-sm border">
+          {/* TypeScript xatolarini tuzatish: prop nomlarini yangilaymiz */}
           <MapPicker
-            initialPosition={savedCoords ? [savedCoords.lat, savedCoords.lng] : undefined}
-            onChange={(lat, lng) => handleMapChange(lat, lng)}
+            initialPos={savedCoords ? [savedCoords.lat, savedCoords.lng] : [41.311081, 69.240562]}
+            onLocationSelect={handleMapChange}
           />
         </section>
 
-        <section className="flex items-center gap-3">
-          <div>
-            <button
-              onClick={handleSave}
-              className="px-4 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-700"
-            >
-              Save coordinates
-            </button>
-          </div>
+        <section className="flex items-center gap-3 bg-white p-4 rounded-2xl shadow-sm border">
+          <button
+            onClick={handleSave}
+            className="px-6 py-2.5 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition-all font-bold shadow-lg shadow-blue-100"
+          >
+            Koordinatalarni saqlash
+          </button>
 
-          <div>
-            <button
-              onClick={handleClear}
-              className="px-3 py-2 rounded bg-gray-100 hover:bg-gray-200"
-            >
-              Clear saved
-            </button>
-          </div>
+          <button
+            onClick={handleClear}
+            className="px-6 py-2.5 rounded-xl bg-gray-100 text-gray-600 hover:bg-gray-200 transition-all font-bold"
+          >
+            Tozalash
+          </button>
 
-          <div className="ml-auto text-sm text-gray-700">
-            Live: {liveCoords ? `${liveCoords.lat}, ${liveCoords.lng}` : '—'}
+          <div className="ml-auto text-xs font-mono text-gray-400 bg-gray-50 px-3 py-2 rounded-lg border border-dashed">
+            Jonli: {liveCoords ? `${liveCoords.lat.toFixed(4)}, ${liveCoords.lng.toFixed(4)}` : '—'}
           </div>
         </section>
       </div>
