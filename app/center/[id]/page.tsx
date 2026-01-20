@@ -11,9 +11,13 @@ import {
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
 
 // Xaritani dinamik yuklash (SSR error oldini olish uchun)
-const MapPicker = dynamic(() => import('@/components/MapPicker'), { 
+const MapPicker = dynamic(() => import('@/components/MapPickerClient'), { 
   ssr: false,
-  loading: () => <div className="h-[400px] bg-gray-100 animate-pulse rounded-2xl flex items-center justify-center">Xarita yuklanmoqda...</div>
+  loading: () => (
+    <div className="h-[400px] bg-gray-100 animate-pulse rounded-2xl flex items-center justify-center">
+      Xarita yuklanmoqda...
+    </div>
+  )
 });
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, ArcElement);
@@ -332,3 +336,4 @@ function StatCard({ icon: Icon, label, value, color }: any) {
     </div>
   );
 }
+
