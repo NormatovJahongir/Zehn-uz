@@ -1,14 +1,20 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { 
-  GraduationCap, Users, BookOpen, Plus, 
-  UserCheck, Settings, Trash2, Save, X, Loader2,
+  Users, BookOpen, Plus, 
+  UserCheck, Trash2, Save, X, Loader2,
   TrendingUp, CreditCard, ChevronRight, LayoutDashboard,
-  CalendarCheck, Receipt, School, BarChart3, Map as MapIcon, ShoppingBag, Edit3
+  CalendarCheck, School, Map as MapIcon, ShoppingBag, Edit3
 } from 'lucide-react';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
-import { Line, Doughnut } from 'react-chartjs-2';
+
+// Xaritani dinamik yuklash (SSR error oldini olish uchun)
+const MapPicker = dynamic(() => import('@/components/MapPicker'), { 
+  ssr: false,
+  loading: () => <div className="h-[400px] bg-gray-100 animate-pulse rounded-2xl flex items-center justify-center">Xarita yuklanmoqda...</div>
+});
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, ArcElement);
 
@@ -20,18 +26,20 @@ export default function CenterAdminPage({ params }: { params: { id: string } }) 
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   
-  const [centerName, setCenterName] = useState("O'quv Markazi");
+  // 2. Markaz nomi uchun holat (Dastlab bo'sh yoki yuklanmoqda)
+  const [centerName, setCenterName] = useState("Yuklanmoqda...");
   const [subjects, setSubjects] = useState([]);
   const [teachers, setTeachers] = useState([]);
   const [students, setStudents] = useState([]);
+  const [location, setLocation] = useState({ lat: 41.2995, lng: 69.2401 });
 
   const [formData, setFormData] = useState({
-    id: '', // Tahrirlash uchun
+    id: '',
     name: '',
     price: '',
     phone: '',
-    subjectId: '', // Ustoz yoki o'quvchi uchun
-    teacherId: '', // O'quvchi uchun
+    subjectId: '',
+    teacherId: '',
   });
 
   useEffect(() => {
@@ -40,10 +48,12 @@ export default function CenterAdminPage({ params }: { params: { id: string } }) 
         const res = await fetch(`/api/center/data?centerId=${params.id}`);
         const data = await res.json();
         if (data.success) {
-          setCenterName(data.centerName || "Markaz nomi");
+          // Ro'yxatdan o'tgan vaqtdagi nomni o'rnatish
+          setCenterName(data.centerName || "Nomsiz Markaz");
           setSubjects(data.subjects || []);
           setTeachers(data.teachers || []);
           setStudents(data.students || []);
+          if (data.location) setLocation(data.location);
         }
       } catch (err) {
         console.error("Xato:", err);
@@ -66,7 +76,6 @@ export default function CenterAdminPage({ params }: { params: { id: string } }) 
       });
       
       if (response.ok) {
-        // Ma'lumotlarni qayta yuklash (soddalik uchun)
         window.location.reload();
       }
     } catch (err) {
@@ -103,8 +112,6 @@ export default function CenterAdminPage({ params }: { params: { id: string } }) 
             <div className="bg-blue-600 p-2 rounded-xl"><School size={24} /></div>
             <span className="text-xl font-black tracking-tighter">EduMarket</span>
           </div>
-          
-          {/* Marketplace & Xarita sarlavhalari yuqorida */}
           <div className="space-y-1">
             <SidebarLink icon={ShoppingBag} label="Marketplace" active={activeTab === 'marketplace'} onClick={() => setActiveTab('marketplace')} />
             <SidebarLink icon={MapIcon} label="Xarita" active={activeTab === 'map'} onClick={() => setActiveTab('map')} />
@@ -131,12 +138,16 @@ export default function CenterAdminPage({ params }: { params: { id: string } }) 
              <span className="capitalize">{activeTab}</span>
           </h1>
           
-          <button onClick={() => openModal()} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg shadow-blue-100">
-            <Plus size={20} /> Qo'shish
-          </button>
+          {/* Dashboardda qo'shish tugmasi ko'rinmaydi, faqat ma'lumot ko'rish uchun */}
+          {activeTab !== 'dashboard' && activeTab !== 'map' && activeTab !== 'marketplace' && (
+            <button onClick={() => openModal()} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg shadow-blue-100">
+              <Plus size={20} /> Qo'shish
+            </button>
+          )}
         </header>
 
         <div className="p-8 space-y-8">
+          {/* 1. Dashboard Faqat ko'rish rejimi */}
           {activeTab === 'dashboard' && <DashboardView subjects={subjects} teachers={teachers} students={students} />}
           
           {/* Subjects View */}
@@ -207,7 +218,16 @@ export default function CenterAdminPage({ params }: { params: { id: string } }) 
             </div>
           )}
 
-          {activeTab === 'map' && <div className="bg-white p-10 rounded-[32px] border text-center"><MapIcon size={48} className="mx-auto mb-4 text-gray-300"/><h2 className="text-xl font-bold">Markaz Joylashuvi (Xarita)</h2><p className="text-gray-400">Tez orada xarita integratsiyasi qo'shiladi...</p></div>}
+          {/* Map View Integration */}
+          {activeTab === 'map' && (
+            <div className="bg-white p-8 rounded-[32px] border shadow-sm space-y-4">
+              <div className="flex justify-between items-center">
+                <h2 className="text-xl font-black">Markaz joylashuvi</h2>
+                <div className="text-sm text-gray-400 font-mono">{location.lat.toFixed(4)}, {location.lng.toFixed(4)}</div>
+              </div>
+              <MapPicker onLocationSelect={(ll: any) => setLocation(ll)} initialPos={[location.lat, location.lng]} />
+            </div>
+          )}
         </div>
       </main>
 
@@ -229,7 +249,6 @@ export default function CenterAdminPage({ params }: { params: { id: string } }) 
                 <input className="w-full bg-gray-50 border-2 border-transparent rounded-2xl px-5 py-3.5 focus:border-blue-600 outline-none transition-all font-medium" placeholder="Telefon raqami" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} />
               )}
 
-              {/* Biriktirish qismlari */}
               {(activeTab === 'teachers' || activeTab === 'students') && (
                 <select className="w-full bg-gray-50 border-2 border-transparent rounded-2xl px-5 py-3.5 outline-none" value={formData.subjectId} onChange={(e) => setFormData({...formData, subjectId: e.target.value})}>
                   <option value="">Fan biriktirish</option>
@@ -255,7 +274,7 @@ export default function CenterAdminPage({ params }: { params: { id: string } }) 
   );
 }
 
-// Dashboard View Component
+// Dashboard Faqat ma'lumotlarni ko'rish uchun
 function DashboardView({ subjects, teachers, students }: any) {
   return (
     <>
@@ -265,10 +284,30 @@ function DashboardView({ subjects, teachers, students }: any) {
         <StatCard icon={Users} label="O'quvchilar" value={students.length} color="green" />
         <StatCard icon={TrendingUp} label="Daromad" value="12.5M" color="orange" />
       </div>
-      <div className="bg-white p-8 rounded-[32px] border shadow-sm">
-        <h3 className="font-bold text-gray-800 mb-6">Oylik o'sish ko'rsatkichi</h3>
-        <div className="h-64">
-           {/* Chart qismi shu yerda qoladi */}
+      
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white p-8 rounded-[32px] border shadow-sm">
+          <h3 className="font-bold text-gray-800 mb-6">Oylik o'sish ko'rsatkichi</h3>
+          <div className="h-64 flex items-center justify-center bg-gray-50 rounded-2xl text-gray-400">
+             Grafik ma'lumotlari tahlil qilinmoqda...
+          </div>
+        </div>
+        
+        <div className="bg-white p-8 rounded-[32px] border shadow-sm">
+          <h3 className="font-bold text-gray-800 mb-6">So'nggi faollik</h3>
+          <div className="space-y-4">
+            {students.slice(0, 3).map((s: any, i: number) => (
+              <div key={i} className="flex items-center gap-4 p-3 hover:bg-gray-50 rounded-xl transition-all">
+                <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold">
+                  {s.name?.charAt(0) || "S"}
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-gray-800">{s.name} qo'shildi</p>
+                  <p className="text-xs text-gray-400">Hozirgina</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </>
