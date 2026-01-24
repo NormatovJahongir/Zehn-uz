@@ -31,8 +31,8 @@ function Navbar() {
               <GraduationCap className="text-white" size={26} />
             </div>
             <div className="flex flex-col">
-              <span className="text-xl font-black tracking-tight text-gray-900 leading-none">EduMarket</span>
-              <span className="text-[10px] font-bold text-blue-600 tracking-widest uppercase">Management</span>
+              <span className="text-xl font-black tracking-tight text-gray-900 leading-none">Zehn.uz</span>
+              <span className="text-[10px] font-bold text-blue-600 tracking-widest uppercase">Platformasi</span>
             </div>
           </Link>
 
