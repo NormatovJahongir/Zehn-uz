@@ -67,6 +67,24 @@ function Navbar() {
   );
 }
 
+// 1. Footer komponentini shu yerning o'zida yaratib qo'yamiz
+function Footer() {
+  const { currentLang } = useLanguage();
+  const year = new Date().getFullYear();
+  
+  const text = {
+    UZ: "Barcha huquqlar himoyalangan",
+    RU: "Все права защищены",
+    EN: "All rights reserved"
+  };
+
+  return (
+    <footer className="py-10 border-t text-center text-gray-500 text-sm">
+      © {year} EduMarket. {text[currentLang as keyof typeof text]}
+    </footer>
+  );
+}
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="uz">
