@@ -6,7 +6,7 @@ import Link from "next/link";
 import Script from "next/script";
 import { usePathname } from 'next/navigation';
 import React from 'react';
-import { LanguageProvider, useLanguage } from "context/LanguageContext";
+import { LanguageProvider, useLanguage } from "./context/LanguageContext";
 import { 
   GraduationCap, Home, MapPinned, LogIn,
   Phone, Mail, Send, Instagram, Facebook  
