@@ -8,12 +8,14 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
+import { useLanguage } from './LanguageContext'; // To'g'ri yo'lni tekshiring
 
 const CenterMapClient = dynamic(() => import('../components/CenterMapClient'), { 
   ssr: false,
   loading: () => <div className="h-[450px] bg-gray-100 animate-pulse rounded-[2.5rem]" />
 });
 
+// 1. Kengaytirilgan lug'at
 const translations: any = {
   UZ: {
     heroTitle: "Kelajagingiz uchun eng yaxshi bilim maskanini toping",
@@ -23,13 +25,40 @@ const translations: any = {
     topCenters: "Top o'quv markazlari",
     stats: ["Markazlar", "O'quvchilar", "Kurslar", "Reyting"],
     addCenter: "Hoziroq qo'shiling",
-    more: "Batafsil ma'lumot"
+    more: "Batafsil",
+    allView: "Hammasini ko'rish",
+    subject: "fan"
+  },
+  RU: {
+    heroTitle: "Найдите лучшее учебное заведение для будущего",
+    heroDesc: "Все учебные центры на одной платформе. Сравнивайте и регистрируйтесь.",
+    searchPlaceholder: "Центр, предмет или адрес...",
+    viewMap: "Центры на карте",
+    topCenters: "Лучшие учебные центры",
+    stats: ["Центров", "Учеников", "Курсов", "Рейтинг"],
+    addCenter: "Присоединяйтесь сейчас",
+    more: "Подробнее",
+    allView: "Посмотреть все",
+    subject: "предм."
+  },
+  EN: {
+    heroTitle: "Find the best educational center for your future",
+    heroDesc: "All learning centers in one platform. Compare and register.",
+    searchPlaceholder: "Center, subject or address...",
+    viewMap: "Centers on Map",
+    topCenters: "Top Training Centers",
+    stats: ["Centers", "Students", "Courses", "Rating"],
+    addCenter: "Join Now",
+    more: "Learn More",
+    allView: "View All",
+    subject: "subj."
   }
 };
 
 export default function MarketplacePage() {
+  const { currentLang } = useLanguage(); // Global tildan foydalanish
+  const t = translations[currentLang || 'UZ']; 
   const [searchTerm, setSearchTerm] = useState("");
-  const t = translations["UZ"]; // Tilni Layout-dan Context orqali olish tavsiya etiladi
 
   const allCenters = [
     { id: 1, name: "Zehn Akademiyasi", rating: 4.9, students: 1200, subjects: 12, address: "Chilonzor", desc: "Zamonaviy IT va xorijiy tillar markazi.", lat: 41.2833, lng: 69.2123 },
@@ -87,14 +116,14 @@ export default function MarketplacePage() {
         <StatCard icon={Star} value="4.8" label={t.stats[3]} color="amber" />
       </div>
 
-      {/* MAP SECTION - ID qo'shildi */}
+      {/* MAP SECTION */}
       <section id="map-section" className="space-y-10 scroll-mt-28">
         <div className="flex items-center justify-between">
           <h2 className="text-4xl font-black text-gray-900 flex items-center gap-4">
             <MapIcon className="text-blue-600" size={36} /> {t.viewMap}
           </h2>
           <div className="bg-blue-50 text-blue-600 px-6 py-2.5 rounded-2xl font-black text-sm uppercase border border-blue-100">
-            Toshkent shahri
+            Toshkent
           </div>
         </div>
         <div className="rounded-[3.5rem] overflow-hidden border-[16px] border-white shadow-2xl h-[550px]">
@@ -109,13 +138,13 @@ export default function MarketplacePage() {
             <Star className="text-amber-500 fill-amber-500" size={36} /> {t.topCenters}
           </h2>
           <Link href="/marketplace" className="text-blue-600 font-black flex items-center gap-2 hover:translate-x-1 transition-transform bg-blue-50 px-6 py-3 rounded-2xl">
-            Hammasini ko&apos;rish <ArrowRight size={20} />
+            {t.allView} <ArrowRight size={20} />
           </Link>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
           {filteredCenters.map((center) => (
-            <CenterCard key={center.id} center={center} btnText={t.more} />
+            <CenterCard key={center.id} center={center} btnText={t.more} subjectLabel={t.subject} />
           ))}
         </div>
       </section>
@@ -123,7 +152,6 @@ export default function MarketplacePage() {
   );
 }
 
-// StatCard va CenterCard komponentlari o'zgarishsiz qoladi...
 function StatCard({ icon: Icon, value, label, color }: any) {
   const colors: any = {
     blue: "bg-blue-50 text-blue-600",
@@ -142,7 +170,7 @@ function StatCard({ icon: Icon, value, label, color }: any) {
   );
 }
 
-function CenterCard({ center, btnText }: any) {
+function CenterCard({ center, btnText, subjectLabel }: any) {
   return (
     <div className="bg-white rounded-[3.5rem] border border-gray-100 shadow-sm hover:shadow-2xl transition-all duration-500 overflow-hidden group">
       <div className="h-64 bg-slate-100 relative overflow-hidden">
@@ -160,7 +188,7 @@ function CenterCard({ center, btnText }: any) {
         <p className="text-gray-500 font-medium line-clamp-2 leading-relaxed h-14 text-lg">{center.desc}</p>
         <div className="flex items-center gap-8 py-6 border-y border-gray-50">
           <div className="flex items-center gap-3 text-base font-black text-gray-700"><Users size={24} className="text-blue-500" /> {center.students}</div>
-          <div className="flex items-center gap-3 text-base font-black text-gray-700"><BookOpen size={24} className="text-indigo-500" /> {center.subjects} fan</div>
+          <div className="flex items-center gap-3 text-base font-black text-gray-700"><BookOpen size={24} className="text-indigo-500" /> {center.subjects} {subjectLabel}</div>
         </div>
         <Link href={`/center/${center.id}`} className="w-full bg-slate-900 text-white py-6 rounded-[2rem] font-black text-lg flex items-center justify-center gap-3 group-hover:bg-blue-600 transition-all shadow-xl">
           {btnText} <ArrowRight size={24} />
