@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
-import { useLanguage } from 'context/LanguageContext'; // To'g'ri yo'lni tekshiring
+import { useLanguage } from './context/LanguageContext'; // To'g'ri yo'lni tekshiring
 
 const CenterMapClient = dynamic(() => import('../components/CenterMapClient'), { 
   ssr: false,
