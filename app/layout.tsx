@@ -75,12 +75,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className={`${inter.className} min-h-screen flex flex-col bg-gray-50 text-gray-900 antialiased`}>
         <LanguageProvider>
-          <Navbar />
-          <main className="flex-grow">
-            {children}
-          </main>
-          {/* Footer kodi... */}
-        </LanguageProvider>
+   <Navbar />      {/* Tilni o'zgartira oladi */}
+   <main>{children}</main> {/* Tilni qabul qila oladi */}
+   <Footer />      {/* Tilga qarab o'zgaradi */}
+</LanguageProvider>
       </body>
     </html>
   );
