@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   UserCircle, BookOpen, CalendarCheck, 
   TrendingUp, Wallet, School, Users, 
@@ -9,8 +9,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
-// --- Yordamchi komponentlar (Asosiy funksiyadan tashqarida) ---
-
+// --- Yordamchi komponentlar ---
 const CourseCard = ({ title, center, teacher, status, date }: any) => (
   <div className="p-5 rounded-2xl border border-gray-100 bg-gray-50/50 hover:bg-white hover:shadow-md transition-all group">
     <div className="flex justify-between items-start mb-3">
@@ -30,114 +29,100 @@ const CourseCard = ({ title, center, teacher, status, date }: any) => (
   </div>
 );
 
-const ResultItem = ({ name, score }: any) => (
-  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
-    <div className="text-sm font-medium text-gray-700">{name}</div>
-    <div className={`font-bold ${score >= 80 ? 'text-emerald-600' : score >= 70 ? 'text-blue-600' : 'text-orange-600'}`}>
-      {score}%
-    </div>
-  </div>
-);
-
-const PaymentItem = ({ center, amount, status, color }: any) => (
-  <div className="flex items-center justify-between p-3 border-b border-dashed last:border-0">
-    <div>
-      <div className="text-sm font-bold text-gray-800">{center}</div>
-      <div className="text-[10px] text-gray-400">{amount} so'm</div>
-    </div>
-    <div className={`text-xs font-bold ${color}`}>{status}</div>
-  </div>
-);
-
 // --- Asosiy Dashboard Sahifasi ---
-
 export default function StudentDashboard() {
-  const stats = [
-    { label: "Faol kurslar", value: "3", icon: BookOpen, color: "text-blue-600", bg: "bg-blue-50" },
-    { label: "Qatnashgan darslar", value: "42", icon: CalendarCheck, color: "text-emerald-600", bg: "bg-emerald-50" },
-    { label: "O'rtacha natija", value: "85%", icon: TrendingUp, color: "text-purple-600", bg: "bg-purple-50" },
-    { label: "To'lovlar kutilmoqda", value: "1", icon: Wallet, color: "text-orange-600", bg: "bg-orange-50" },
-  ];
+  const [userData, setUserData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // LocalStorage'dan markaz ID sini olamiz
+        const centerId = localStorage.getItem('centerId');
+        if (centerId) {
+          const res = await fetch(`/api/center/data?centerId=${centerId}`);
+          if (res.ok) {
+            const data = await res.json();
+            setUserData(data);
+          }
+        }
+      } catch (error) {
+        console.error("Dashboard yuklashda xatolik:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  if (loading) return <div className="p-10 text-center text-gray-500 font-bold">Yuklanmoqda...</div>;
 
   return (
     <div className="space-y-8 pb-10">
+      {/* Header - Endi bazadan kelgan markaz nomi chiqadi */}
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm">
         <div className="flex items-center gap-4">
           <div className="bg-blue-600 p-3 rounded-2xl text-white">
             <UserCircle size={40} />
           </div>
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Xush kelibsiz, Jamshid!</h1>
-            <p className="text-gray-500">O'quv jarayoningiz haqida ma'lumotlar</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+              {userData?.name || "O'quv Markazi"}
+            </h1>
+            <p className="text-gray-500">Tizim holati va umumiy statistika</p>
           </div>
         </div>
-        <Link href="/profile" className="flex items-center gap-2 text-blue-600 font-semibold hover:underline">
-          Profil <ChevronRight size={18} />
+        <Link href="/settings" className="flex items-center gap-2 text-blue-600 font-semibold hover:underline">
+          Sozlamalar <ChevronRight size={18} />
         </Link>
       </header>
 
+      {/* Statistika - Bazadagi real sonlar */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, idx) => (
-          <div key={idx} className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
-            <div className={`${stat.bg} ${stat.color} w-12 h-12 rounded-2xl flex items-center justify-center mb-4`}>
-              <stat.icon size={24} />
-            </div>
-            <div className="text-2xl font-black text-gray-900">{stat.value}</div>
-            <div className="text-sm text-gray-500 font-medium">{stat.label}</div>
-          </div>
-        ))}
+        <StatCard label="Fanlar" value={userData?.subjects?.length || 0} icon={BookOpen} color="text-blue-600" bg="bg-blue-50" />
+        <StatCard label="O'qituvchilar" value={userData?.teachers?.length || 0} icon={Users} color="text-emerald-600" bg="bg-emerald-50" />
+        <StatCard label="O'quvchilar" value={userData?.students?.length || 0} icon={GraduationCap} color="text-purple-600" bg="bg-purple-50" />
+        <StatCard label="Kutilmoqda" value="1" icon={Wallet} color="text-orange-600" bg="bg-orange-50" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
           <section className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm">
             <h2 className="text-xl font-bold flex items-center gap-2 mb-6">
-              <GraduationCap className="text-blue-600" /> Mening kurslarim
+              <GraduationCap className="text-blue-600" /> Oxirgi qo'shilgan fanlar
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <CourseCard title="Frontend Dasturlash" center="Zehn Akad." teacher="Anvar T." status="Faol" date="12.10.2025" />
-              <CourseCard title="IELTS 7.5+" center="Everest" teacher="Sarah J." status="Yakunlangan" date="05.08.2025" />
-            </div>
-          </section>
-
-          <section className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm">
-            <h2 className="text-xl font-bold flex items-center gap-2 mb-6">
-              <Calendar className="text-blue-600" /> Davomat
-            </h2>
-            <div className="flex flex-wrap gap-3">
-              {[...Array(10)].map((_, i) => (
-                <div key={i} className={`flex flex-col items-center p-3 rounded-2xl border-2 ${i % 3 === 0 ? 'border-red-100 bg-red-50 text-red-600' : 'border-emerald-100 bg-emerald-50 text-emerald-600'}`}>
-                  <span className="text-[10px] font-bold opacity-60">Dars {i+1}</span>
-                  {i % 3 === 0 ? <X size={20} /> : <Check size={20} />}
-                </div>
+              {userData?.subjects?.slice(0, 2).map((sub: any) => (
+                <CourseCard 
+                  key={sub.id}
+                  title={sub.name} 
+                  center={userData.name} 
+                  teacher="Tayinlanmagan" 
+                  status="Faol" 
+                  date={new Date(sub.createdAt).toLocaleDateString()} 
+                />
               ))}
-            </div>
-          </section>
-        </div>
-
-        <div className="space-y-8">
-          <section className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm">
-            <h2 className="text-xl font-bold flex items-center gap-2 mb-6">
-              <TrendingUp className="text-purple-600" size={20} /> Natijalar
-            </h2>
-            <div className="space-y-4">
-              <ResultItem name="Mok-IELTS Writing" score={75} />
-              <ResultItem name="React.js Test" score={92} />
-              <ResultItem name="JS Algorithm" score={60} />
-            </div>
-          </section>
-
-          <section className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm">
-            <h2 className="text-xl font-bold flex items-center gap-2 mb-6">
-              <Wallet className="text-orange-600" size={20} /> To'lovlar
-            </h2>
-            <div className="space-y-4">
-              <PaymentItem center="Zehn Akad." amount="800,000" status="To'langan" color="text-emerald-600" />
-              <PaymentItem center="Everest" amount="1,200,000" status="Kutilmoqda" color="text-orange-600" />
+              {(!userData?.subjects || userData?.subjects.length === 0) && (
+                <p className="text-gray-400 text-sm italic">Hozircha fanlar yo'q</p>
+              )}
             </div>
           </section>
         </div>
       </div>
+    </div>
+  );
+}
+
+// Kichik yordamchi komponent
+function StatCard({ label, value, icon: Icon, color, bg }: any) {
+  return (
+    <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+      <div className={`${bg} ${color} w-12 h-12 rounded-2xl flex items-center justify-center mb-4`}>
+        <Icon size={24} />
+      </div>
+      <div className="text-2xl font-black text-gray-900">{value}</div>
+      <div className="text-sm text-gray-500 font-medium">{label}</div>
     </div>
   );
 }
