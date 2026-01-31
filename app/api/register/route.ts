@@ -5,6 +5,7 @@ import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
+// Validatsiya sxemasi
 const registerSchema = z.object({
   telegramId: z.string().optional().nullable(),
   centerName: z.string().min(2, "Markaz nomi juda qisqa"),
@@ -19,7 +20,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const parsed = registerSchema.parse(body);
 
-    // 1. Username bandligini tranzaksiyadan tashqarida tekshiramiz (tezlik uchun)
+    // 1. Username bandligini tekshirish
     const existingUser = await prisma.user.findUnique({
       where: { username: parsed.username }
     });
@@ -33,60 +34,49 @@ export async function POST(request: Request) {
 
     const hashedPassword = await bcrypt.hash(parsed.password, 10);
 
-    // 2. Tranzaksiya
+    // 2. Tranzaksiya - Markaz va Userni birga yaratamiz
     const result = await prisma.$transaction(async (tx) => {
-      // Markaz yaratish
+      // Markaz yaratish - MUHIM: Default koordinatalar qo'shildi (Xarita uchun)
       const newCenter = await tx.center.create({
         data: {
           name: parsed.centerName,
-          adminName: parsed.adminName,
-          phone: parsed.phone,
+          // Agar bazangizda adminName/phone maydonlari Center modelida bo'lsa qolsin, 
+          // bo'lmasa pastdagi User modelida saqlanadi
+          latitude: 41.311081, // Toshkent default
+          longitude: 69.240562,
         }
       });
 
-      // Foydalanuvchini boshqarish
+      let user;
+      const userData = {
+        username: parsed.username,
+        password: hashedPassword,
+        firstName: parsed.adminName,
+        phone: parsed.phone,
+        role: 'ADMIN', // yoki 'OWNER' loyihangizga qarab
+        centerId: newCenter.id,
+      };
+
       if (parsed.telegramId) {
-        // Bot orqali kelgan bo'lsa - upsert (telegramId bo'yicha)
-        await tx.user.upsert({
+        user = await tx.user.upsert({
           where: { telegramId: parsed.telegramId },
-          update: {
-            username: parsed.username,
-            password: hashedPassword,
-            firstName: parsed.adminName,
-            phone: parsed.phone,
-            role: 'ADMIN',
-            centerId: newCenter.id,
-          },
-          create: {
-            telegramId: parsed.telegramId,
-            username: parsed.username,
-            password: hashedPassword,
-            firstName: parsed.adminName,
-            phone: parsed.phone,
-            role: 'ADMIN',
-            centerId: newCenter.id,
-          }
+          update: userData,
+          create: { ...userData, telegramId: parsed.telegramId }
         });
       } else {
-        // Botdan emas, to'g'ridan-to'g'ri saytdan kelgan bo'lsa
-        await tx.user.create({
-          data: {
-            username: parsed.username,
-            password: hashedPassword,
-            firstName: parsed.adminName,
-            phone: parsed.phone,
-            role: 'ADMIN',
-            centerId: newCenter.id,
-          }
+        user = await tx.user.create({
+          data: userData
         });
       }
 
-      return { centerId: newCenter.id };
+      return { centerId: newCenter.id, userId: user.id };
     });
 
+    // 3. Muvaffaqiyatli javob
     return NextResponse.json({ 
       success: true, 
       centerId: result.centerId,
+      userId: result.userId,
       message: "Muvaffaqiyatli ro'yxatdan o'tdingiz!" 
     }, { status: 201 });
 
@@ -96,5 +86,7 @@ export async function POST(request: Request) {
     }
     console.error("Register Error:", err);
     return NextResponse.json({ error: 'Serverda xatolik yuz berdi' }, { status: 500 });
+  } finally {
+    await prisma.$disconnect();
   }
 }
