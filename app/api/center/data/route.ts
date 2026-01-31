@@ -4,28 +4,52 @@ import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
+// --- GET METODI QO'SHILDI ---
+export async function GET(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const centerId = searchParams.get('centerId');
+
+    if (!centerId) {
+      return NextResponse.json({ error: 'Center ID topilmadi' }, { status: 400 });
+    }
+
+    // Markazga tegishli barcha ma'lumotlarni parallel ravishda yig'ib olish
+    const [subjects, teachers, students] = await Promise.all([
+      prisma.subject.findMany({ where: { centerId } }),
+      prisma.user.findMany({ where: { centerId, role: 'TEACHER' } }),
+      prisma.user.findMany({ where: { centerId, role: 'STUDENT' } }),
+    ]);
+
+    return NextResponse.json({
+      subjects,
+      teachers,
+      students
+    }, { status: 200 });
+
+  } catch (err) {
+    console.error("GET Data Error:", err);
+    return NextResponse.json({ error: 'Maʼlumotlarni yuklashda xatolik' }, { status: 500 });
+  }
+}
+
+// --- SIZNING MAVJUD POST METODINGIZ ---
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { type, name, price, phone, centerId } = body;
 
-    // centerId majburiyligini tekshirish
     if (!centerId) {
       return NextResponse.json({ error: 'Center ID topilmadi' }, { status: 400 });
     }
 
     let result;
-    // Tasodifiy son username takrorlanmasligi uchun
     const randomId = Math.floor(Math.random() * 1000);
 
     switch (type) {
       case 'subjects':
         result = await prisma.subject.create({
-          data: { 
-            name, 
-            price: parseFloat(price) || 0, 
-            centerId 
-          }
+          data: { name, price: parseFloat(price) || 0, centerId }
         });
         break;
       
@@ -35,12 +59,9 @@ export async function POST(request: Request) {
             firstName: name, 
             role: 'TEACHER', 
             phone: phone || null,
-            // User modelidagi majburiy maydonlar:
             username: `teacher_${randomId}_${Date.now()}`,
             password: await bcrypt.hash('teacher123', 10),
-            center: {
-              connect: { id: centerId } // centerId ni bog'lashning xavfsiz usuli
-            }
+            center: { connect: { id: centerId } }
           }
         });
         break;
@@ -51,12 +72,9 @@ export async function POST(request: Request) {
             firstName: name, 
             role: 'STUDENT', 
             phone: phone || null,
-            // User modelidagi majburiy maydonlar:
             username: `student_${randomId}_${Date.now()}`,
             password: await bcrypt.hash('student123', 10),
-            center: {
-              connect: { id: centerId }
-            }
+            center: { connect: { id: centerId } }
           }
         });
         break;
