@@ -5,18 +5,46 @@ import bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 export async function POST(request: Request) {
-  const { username, password } = await request.json();
+  try {
+    const { username, password } = await request.json();
 
-  const user = await prisma.user.findUnique({ where: { username } });
-
-  if (user && await bcrypt.compare(password, user.password)) {
-    // Bu yerda xavfsizlik uchun JWT token yoki Session ishlatish kerak
-    return NextResponse.json({ 
-      success: true, 
-      centerId: user.centerId, 
-      role: user.role 
+    // 1. Foydalanuvchini topamiz va unga bog'langan markazni ham qo'shib olamiz (include)
+    const user = await prisma.user.findUnique({ 
+      where: { username },
+      include: { 
+        center: true // Markaz nomi va koordinatalarini olish uchun shart
+      }
     });
-  }
 
-  return NextResponse.json({ error: "Login yoki parol xato" }, { status: 401 });
+    // 2. Foydalanuvchi mavjudligi va parolni tekshiramiz
+    if (user && await bcrypt.compare(password, user.password)) {
+      
+      // 3. Frontendga kerakli barcha ma'lumotlarni qaytaramiz
+      return NextResponse.json({ 
+        success: true, 
+        user: {
+          id: user.id,
+          username: user.username,
+          firstName: user.firstName,
+          role: user.role,
+          centerId: user.centerId,
+          centerName: user.center?.name || "Noma'lum markaz"
+        }
+      });
+    }
+
+    return NextResponse.json(
+      { error: "Login yoki parol xato" }, 
+      { status: 401 }
+    );
+
+  } catch (error) {
+    console.error("Login Error:", error);
+    return NextResponse.json(
+      { error: "Serverda xatolik yuz berdi" }, 
+      { status: 500 }
+    );
+  } finally {
+    await prisma.$disconnect();
+  }
 }
