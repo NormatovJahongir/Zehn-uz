@@ -32,6 +32,7 @@ model User {
 model Center {
   id         String    @id @default(uuid())
   name       String
+  description String?
   adminName  String?   // Markaz rahbari ismi
   phone      String?
   address    String?   // Markaz manzili (matn ko'rinishida)
@@ -53,3 +54,4 @@ model Subject {
   centerId  String
   center    Center   @relation(fields: [centerId], references: [id])
 }
+
