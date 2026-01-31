@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { useLanguage } from '@/app/context/LanguageContext';
-import MapPickerClient from '@/components/MapPickerClient';
+import { useLanguage } from './context/LanguageContext';
+import MapPickerClient from '../../../components/MapPickerClient';
 import { Save, Building2, AlignLeft, MapPin, Loader2 } from 'lucide-react';
 
 export default function CenterSettingsPage() {
@@ -118,4 +118,5 @@ export default function CenterSettingsPage() {
       </div>
     </div>
   );
+
 }
