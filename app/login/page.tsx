@@ -32,22 +32,23 @@ export default function LoginPage() {
       const data = await response.json();
 
       if (response.ok) {
-        if (data.centerId) {
-          router.push(`/center/${data.centerId}`);
-        } else if (data.role === 'SUPER_ADMIN') {
-          router.push('/admin/dashboard');
-        } else {
-          router.push('/');
-        }
-      } else {
-        setError(data.error || "Login yoki parol xato");
-      }
-    } catch (err) {
-      setError("Server bilan ulanishda xatolik yuz berdi");
-    } finally {
-      setLoading(false);
-    }
-  };
+  // 1. Agar admin markazga biriktirilgan bo'lsa, markaz sahifasiga
+  if (data.centerId) {
+    router.push(`/center/${data.centerId}`);
+  } 
+  // 2. Agar markazi yo'q bo'lsa ham, roli admin bo'lsa, umumiy admin paneliga
+  else if (data.role === 'CENTER_ADMIN') {
+    router.push('/center'); // Yoki sizdagi admin papkasi nomiga qarab (/admin)
+  } 
+  // 3. Super admin uchun
+  else if (data.role === 'SUPER_ADMIN') {
+    router.push('/admin/dashboard');
+  } 
+  // 4. Qolganlar (Talaba yoki Guest) uchun
+  else {
+    router.push('/marketplace');
+  }
+}
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4 font-sans">
@@ -187,3 +188,4 @@ function FeatureItem({ icon: Icon, title, desc }: any) {
     </div>
   );
 }
+
