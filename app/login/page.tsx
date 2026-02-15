@@ -32,29 +32,35 @@ export default function LoginPage() {
       const data = await response.json();
 
       if (response.ok) {
-  // 1. Agar admin markazga biriktirilgan bo'lsa, markaz sahifasiga
-  if (data.centerId) {
-    router.push(`/center/${data.centerId}`);
-  } 
-  // 2. Agar markazi yo'q bo'lsa ham, roli admin bo'lsa, umumiy admin paneliga
-  else if (data.role === 'CENTER_ADMIN') {
-    router.push('/center'); // Yoki sizdagi admin papkasi nomiga qarab (/admin)
-  } 
-  // 3. Super admin uchun
-  else if (data.role === 'SUPER_ADMIN') {
-    router.push('/admin/dashboard');
-  } 
-  // 4. Qolganlar (Talaba yoki Guest) uchun
-  else {
-    router.push('/marketplace');
-  }
-}
+        // --- YO'NALTIRISH MANTIQI SHU YERDA ---
+        if (data.centerId) {
+          // Agar admin birorta markazga bog'langan bo'lsa
+          router.push(`/center/${data.centerId}`);
+        } else if (data.role === 'CENTER_ADMIN') {
+          // Markazi yo'q yoki endi ochgan admin bo'lsa
+          router.push('/center'); 
+        } else if (data.role === 'SUPER_ADMIN') {
+          // Tizimning asosiy admini bo'lsa
+          router.push('/admin/dashboard');
+        } else {
+          // Qolgan hamma (talabalar va boshqalar) uchun
+          router.push('/marketplace');
+        }
+      } else {
+        setError(data.error || "Login yoki parol xato");
+      }
+    } catch (err) {
+      setError("Server bilan ulanishda xatolik yuz berdi");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4 font-sans">
       <div className="max-w-5xl w-full bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row min-h-[650px]">
         
-        {/* Chap tomon: Xususiyatlar */}
+        {/* Chap tomon: Vizual qism */}
         <div className="md:w-1/2 bg-blue-600 p-12 text-white flex flex-col justify-between">
           <div>
             <div className="flex items-center gap-3 mb-8">
@@ -87,7 +93,7 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* O'ng tomon: Kirish formasi */}
+        {/* O'ng tomon: Login formasi */}
         <div className="md:w-1/2 p-8 md:p-16 flex flex-col justify-center">
           <div className="max-w-sm mx-auto w-full">
             <h2 className="text-2xl font-bold text-gray-800 mb-2 text-center md:text-left">Tizimga kirish</h2>
@@ -138,7 +144,6 @@ export default function LoginPage() {
               </button>
             </form>
 
-            {/* Ro'yxatdan o'tish qismi - Yangi qo'shilgan */}
             <div className="mt-8 pt-6 border-t border-gray-100 text-center">
               <p className="text-sm text-gray-600 mb-3">O'quv markazingiz hali yo'qmi?</p>
               <Link 
@@ -188,4 +193,3 @@ function FeatureItem({ icon: Icon, title, desc }: any) {
     </div>
   );
 }
-
