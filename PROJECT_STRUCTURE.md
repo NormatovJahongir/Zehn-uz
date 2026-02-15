@@ -1,6 +1,6 @@
 # 📂 LOYIHA STRUKTURASI
 
-...
+```
 zehn-uz/
 ├── app/                        # Next.js App Router (Sahifalar va API)
 │   ├── (auth)/                 # Login, Register, Password Recovery
@@ -30,8 +30,8 @@ zehn-uz/
 ├── store/                      # State Management (Zustand yoki Redux)
 ├── types/                      # TypeScript interfeyslari
 └── .env                        # Maxfiy kalitlar (DB_URL, BOT_TOKEN)
-...
 
+```
 ## 🗃 Ma'lumotlar Bazasi Strukturasi
 
 ### Asosiy Jadvallar:
