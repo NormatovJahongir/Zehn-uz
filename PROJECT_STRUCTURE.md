@@ -26,7 +26,7 @@ zehn-uz/
 │   └── telegram-bot.ts         # Bot bilan aloqa qilish logikasi
 ├── prisma/                     # Database Schema va Migrations
 │   └── schema.prisma           # Asosiy DB sxemasi
-├── public/                     # Static fayllar (Logolar, Rasmlar)
+├── static/                     # Static fayllar (Logolar, Rasmlar)
 ├── store/                      # State Management (Zustand yoki Redux)
 ├── types/                      # TypeScript interfeyslari
 └── .env                        # Maxfiy kalitlar (DB_URL, BOT_TOKEN)
