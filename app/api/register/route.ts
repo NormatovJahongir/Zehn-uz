@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Role } from '@prisma/client'; // Role enumini import qildik
 import * as z from 'zod';
 import bcrypt from 'bcryptjs';
 
@@ -36,36 +36,44 @@ export async function POST(request: Request) {
 
     // 2. Tranzaksiya - Markaz va Userni birga yaratamiz
     const result = await prisma.$transaction(async (tx) => {
-      // Markaz yaratish - MUHIM: Default koordinatalar qo'shildi (Xarita uchun)
+      // Markaz yaratish
       const newCenter = await tx.center.create({
         data: {
           name: parsed.centerName,
-          // Agar bazangizda adminName/phone maydonlari Center modelida bo'lsa qolsin, 
-          // bo'lmasa pastdagi User modelida saqlanadi
           latitude: 41.311081, // Toshkent default
           longitude: 69.240562,
         }
       });
 
       let user;
+      // User ma'lumotlari - centerId ni bu yerdan olib tashladik
       const userData = {
         username: parsed.username,
         password: hashedPassword,
         firstName: parsed.adminName,
         phone: parsed.phone,
-        role: 'ADMIN', // yoki 'OWNER' loyihangizga qarab
-        centerId: newCenter.id,
+        role: Role.ADMIN, // Prisma Role enumidan foydalanamiz
       };
 
       if (parsed.telegramId) {
         user = await tx.user.upsert({
           where: { telegramId: parsed.telegramId },
-          update: userData,
-          create: { ...userData, telegramId: parsed.telegramId }
+          update: {
+            ...userData,
+            center: { connect: { id: newCenter.id } } // Bog'liqlikni shu yerda o'rnatamiz
+          },
+          create: { 
+            ...userData, 
+            telegramId: parsed.telegramId,
+            center: { connect: { id: newCenter.id } } // Bog'liqlikni shu yerda o'rnatamiz
+          }
         });
       } else {
         user = await tx.user.create({
-          data: userData
+          data: {
+            ...userData,
+            center: { connect: { id: newCenter.id } } // Bog'liqlikni shu yerda o'rnatamiz
+          }
         });
       }
 
