@@ -80,7 +80,7 @@ function Footer() {
 
   return (
     <footer className="py-10 border-t text-center text-gray-500 text-sm">
-      © {year} EduMarket. {text[currentLang as keyof typeof text]}
+      © {year} Zehn.uz {text[currentLang as keyof typeof text]}
     </footer>
   );
 }
