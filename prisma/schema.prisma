@@ -1,57 +1,93 @@
-generator client {
-  provider = "prisma-client-js"
-}
-
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
-
 model User {
-  id         String   @id @default(uuid())
-  telegramId String?  @unique
-  
-  // LOGIN VA PAROL TIZIMI UCHUN
-  username   String   @unique // Adminlar tizimga kirishi uchun login
-  password   String   // Hashlangan parol saqlanadi
-  
-  email      String?  @unique
-  role       String   @default("STUDENT") // 'SUPER_ADMIN', 'ADMIN', 'TEACHER', 'STUDENT'
-  firstName  String
-  lastName   String?
-  phone      String?
+  id              Int          @id @default(autoincrement())
+  name            String
+  email           String       @unique
+  role            Role
+  enrollments     Enrollment[]
+  attendance      Attendance[]
+  results         Results[]
+  reviews         Reviews[]
+  notifications   Notifications[]
+  botState        BotState?
+}
 
-  // Markaz bilan bog'liqlik
-  centerId   String?  
-  center     Center?  @relation(fields: [centerId], references: [id])
-  
+model Enrollment {
+  id          Int    @id @default(autoincrement())
+  userId      Int
+  courseId    Int
+  createdAt   DateTime @default(now())
+  user        User @relation(fields: [userId], references: [id])
+  course      Course @relation(fields: [courseId], references: [id])
+}
+
+model Teacher {
+  id          Int    @id @default(autoincrement())
+  name        String
+  email       String @unique
+  courses     Course[]
+}
+
+model Course {
+  id          Int           @id @default(autoincrement())
+  title       String
+  description String
+  enrollments Enrollment[]
+  teacherId   Int
+  teacher     Teacher       @relation(fields: [teacherId], references: [id])
+}
+
+model Payment {
+  id           Int       @id @default(autoincrement())
+  userId       Int
+  amount       Float
+  paidAt       DateTime @default(now())
+  user         User      @relation(fields: [userId], references: [id])
+}
+
+model Attendance {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  courseId   Int
+  date       DateTime
+  user       User      @relation(fields: [userId], references: [id])
+  course     Course    @relation(fields: [courseId], references: [id])
+}
+
+model Results {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  courseId   Int
+  score      Float
+  user       User      @relation(fields: [userId], references: [id])
+  course     Course    @relation(fields: [courseId], references: [id])
+}
+
+model Reviews {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  courseId    Int
+  comment      String
+  rating      Int  // Assuming a rating system
+  user        User     @relation(fields: [userId], references: [id])
+  course      Course    @relation(fields: [courseId], references: [id])
+}
+
+model Notifications {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  content    String
   createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt // Ma'lumot yangilanganda avtomat o'zgaradi
+  user       User     @relation(fields: [userId], references: [id])
 }
 
-model Center {
-  id         String    @id @default(uuid())
-  name       String
-  description String?
-  adminName  String?   // Markaz rahbari ismi
-  phone      String?
-  address    String?   // Markaz manzili (matn ko'rinishida)
-  latitude   Float?    @default(0)
-  longitude  Float?    @default(0)
-  
-  // Bog'liqliklar
-  users      User[]    // Shu markazga biriktirilgan hamma (Admin, Teacher, Student)
-  subjects   Subject[] // Shu markazda o'tiladigan fanlar
-  
-  createdAt  DateTime  @default(now())
+model BotState {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  state      Json
+  user       User     @relation(fields: [userId], references: [id])
 }
 
-model Subject {
-  id        String   @id @default(uuid())
-  name      String
-  price     Float
-  duration  String?
-  centerId  String
-  center    Center   @relation(fields: [centerId], references: [id])
+enum Role {
+  USER
+  ADMIN
 }
-
