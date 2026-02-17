@@ -9,9 +9,13 @@ datasource db {
 
 model User {
   id            Int             @id @default(autoincrement())
-  name          String
-  email         String          @unique
-  role          Role
+  firstName     String?         
+  name          String?         
+  username      String          @unique
+  password      String          
+  email         String?         @unique 
+  phone         String?         
+  role          Role            @default(STUDENT)
   centerId      String?         
   enrollments   Enrollment[]
   attendance    Attendance[]
@@ -20,12 +24,13 @@ model User {
   notifications Notifications[]
   botState      BotState?
   payments      Payment[]
+  createdAt     DateTime        @default(now())
 }
 
 model Subject {
   id        Int      @id @default(autoincrement())
   name      String
-  price     Float    @default(0)  // Narx ustuni qo'shildi
+  price     Float    @default(0)  
   centerId  String
   createdAt DateTime @default(now())
 }
