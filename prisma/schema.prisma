@@ -18,8 +18,9 @@ model Center {
 
 model User {
   id            Int             @id @default(autoincrement())
-  telegramId    String?         @unique // Bot qidirishi uchun @unique shart
+  telegramId    String?         @unique 
   firstName     String?         
+  lastName      String?         // BU YERDAlastName BORLIGINI TASDIQLANG
   name          String?         
   username      String          @unique
   password      String          
@@ -40,6 +41,9 @@ model User {
   createdAt     DateTime        @default(now())
 }
 
+// QOLGAN MODELLAR O'ZGARIShSIZ QOLADI...
+// Subject, Enrollment, Teacher, Course, Payment, Attendance, Results, Reviews, Notifications, BotState
+
 model Subject {
   id        Int      @id @default(autoincrement())
   name      String
@@ -47,20 +51,6 @@ model Subject {
   centerId  String
   center    Center   @relation(fields: [centerId], references: [id])
   createdAt DateTime @default(now())
-}
-
-model Course {
-  id          Int          @id @default(autoincrement())
-  title       String
-  description String
-  centerId    String?      
-  center      Center?      @relation(fields: [centerId], references: [id])
-  enrollments Enrollment[]
-  teacherId   Int
-  teacher     Teacher      @relation(fields: [teacherId], references: [id])
-  attendance  Attendance[]
-  results     Results[]
-  reviews     Reviews[]
 }
 
 model Enrollment {
@@ -77,6 +67,20 @@ model Teacher {
   name    String
   email   String   @unique
   courses Course[]
+}
+
+model Course {
+  id          Int          @id @default(autoincrement())
+  title       String
+  description String
+  centerId    String?      
+  center      Center?      @relation(fields: [centerId], references: [id])
+  enrollments Enrollment[]
+  teacherId   Int
+  teacher     Teacher      @relation(fields: [teacherId], references: [id])
+  attendance  Attendance[]
+  results     Results[]
+  reviews     Reviews[]
 }
 
 model Payment {
