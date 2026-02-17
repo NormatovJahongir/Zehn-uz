@@ -15,7 +15,7 @@ model User {
   name          String
   email         String          @unique
   role          Role
-  centerId      Int?            // API kodingiz uchun kerak
+  centerId      String?         // Int? dan String? ga o'zgartirildi
   enrollments   Enrollment[]
   attendance    Attendance[]
   results       Results[]
@@ -25,11 +25,10 @@ model User {
   payments      Payment[]
 }
 
-// YANGI: API kodingiz ushbu modelni findMany() qilmoqda
 model Subject {
   id        Int      @id @default(autoincrement())
   name      String
-  centerId  Int
+  centerId  String   // Int dan String ga o'zgartirildi
   createdAt DateTime @default(now())
 }
 
@@ -53,7 +52,7 @@ model Course {
   id          Int          @id @default(autoincrement())
   title       String
   description String
-  centerId    Int?         // API kodingiz uchun ehtimoliy kerakli maydon
+  centerId    String?      // Int? dan String? ga o'zgartirildi
   enrollments Enrollment[]
   teacherId   Int
   teacher     Teacher      @relation(fields: [teacherId], references: [id])
@@ -116,6 +115,6 @@ model BotState {
 enum Role {
   USER
   ADMIN
-  TEACHER  // API kodingizda 'TEACHER' roli ishlatilgan
-  STUDENT  // API kodingizda 'STUDENT' roli ishlatilgan
+  TEACHER
+  STUDENT
 }
