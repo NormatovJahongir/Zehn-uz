@@ -1,90 +1,106 @@
+// 1. Prisma Client generatori
+generator client {
+  provider = "prisma-client-js"
+}
+
+// 2. Ma'lumotlar bazasi ulanishi (Render.com dagi DATABASE_URL dan foydalanadi)
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 3. Modellar
 model User {
-  id              Int          @id @default(autoincrement())
-  name            String
-  email           String       @unique
-  role            Role
-  enrollments     Enrollment[]
-  attendance      Attendance[]
-  results         Results[]
-  reviews         Reviews[]
-  notifications   Notifications[]
-  botState        BotState?
+  id            Int             @id @default(autoincrement())
+  name          String
+  email         String          @unique
+  role          Role
+  enrollments   Enrollment[]
+  attendance    Attendance[]
+  results       Results[]
+  reviews       Reviews[]
+  notifications Notifications[]
+  botState      BotState?
+  payments      Payment[]       // Payment modeli bilan bog'liqlik qo'shildi
 }
 
 model Enrollment {
-  id          Int    @id @default(autoincrement())
-  userId      Int
-  courseId    Int
-  createdAt   DateTime @default(now())
-  user        User @relation(fields: [userId], references: [id])
-  course      Course @relation(fields: [courseId], references: [id])
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  courseId  Int
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  course    Course   @relation(fields: [courseId], references: [id])
 }
 
 model Teacher {
-  id          Int    @id @default(autoincrement())
-  name        String
-  email       String @unique
-  courses     Course[]
+  id      Int      @id @default(autoincrement())
+  name    String
+  email   String   @unique
+  courses Course[]
 }
 
 model Course {
-  id          Int           @id @default(autoincrement())
+  id          Int          @id @default(autoincrement())
   title       String
   description String
   enrollments Enrollment[]
   teacherId   Int
-  teacher     Teacher       @relation(fields: [teacherId], references: [id])
+  teacher     Teacher      @relation(fields: [teacherId], references: [id])
+  attendance  Attendance[] // Attendance bilan bog'liqlik
+  results     Results[]    // Results bilan bog'liqlik
+  reviews     Reviews[]    // Reviews bilan bog'liqlik
 }
 
 model Payment {
-  id           Int       @id @default(autoincrement())
-  userId       Int
-  amount       Float
-  paidAt       DateTime @default(now())
-  user         User      @relation(fields: [userId], references: [id])
+  id      Int      @id @default(autoincrement())
+  userId  Int
+  amount  Float
+  paidAt  DateTime @default(now())
+  user    User     @relation(fields: [userId], references: [id])
 }
 
 model Attendance {
-  id         Int      @id @default(autoincrement())
-  userId     Int
-  courseId   Int
-  date       DateTime
-  user       User      @relation(fields: [userId], references: [id])
-  course     Course    @relation(fields: [courseId], references: [id])
+  id       Int      @id @default(autoincrement())
+  userId   Int
+  courseId Int
+  date     DateTime
+  user     User     @relation(fields: [userId], references: [id])
+  course   Course   @relation(fields: [courseId], references: [id])
 }
 
 model Results {
-  id         Int      @id @default(autoincrement())
-  userId     Int
-  courseId   Int
-  score      Float
-  user       User      @relation(fields: [userId], references: [id])
-  course     Course    @relation(fields: [courseId], references: [id])
+  id       Int    @id @default(autoincrement())
+  userId   Int
+  courseId Int
+  score    Float
+  user     User   @relation(fields: [userId], references: [id])
+  course   Course @relation(fields: [courseId], references: [id])
 }
 
 model Reviews {
-  id          Int      @id @default(autoincrement())
-  userId      Int
-  courseId    Int
-  comment      String
-  rating      Int  // Assuming a rating system
-  user        User     @relation(fields: [userId], references: [id])
-  course      Course    @relation(fields: [courseId], references: [id])
+  id       Int    @id @default(autoincrement())
+  userId   Int
+  courseId Int
+  comment  String
+  rating   Int
+  user     User   @relation(fields: [userId], references: [id])
+  course   Course @relation(fields: [courseId], references: [id])
 }
 
 model Notifications {
-  id         Int      @id @default(autoincrement())
-  userId     Int
-  content    String
-  createdAt  DateTime @default(now())
-  user       User     @relation(fields: [userId], references: [id])
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  content   String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
 }
 
 model BotState {
-  id         Int      @id @default(autoincrement())
-  userId     Int
-  state      Json
-  user       User     @relation(fields: [userId], references: [id])
+  id     Int  @id @default(autoincrement())
+  userId Int  @unique // User bilan 1:1 bog'liqlik uchun @unique kerak
+  state  Json
+  user   User @relation(fields: [userId], references: [id])
 }
 
 enum Role {
