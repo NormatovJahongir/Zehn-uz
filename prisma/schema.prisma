@@ -3,7 +3,7 @@ generator client {
   provider = "prisma-client-js"
 }
 
-// 2. Ma'lumotlar bazasi ulanishi (Render.com dagi DATABASE_URL dan foydalanadi)
+// 2. Ma'lumotlar bazasi ulanishi
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -15,13 +15,22 @@ model User {
   name          String
   email         String          @unique
   role          Role
+  centerId      Int?            // API kodingiz uchun kerak
   enrollments   Enrollment[]
   attendance    Attendance[]
   results       Results[]
   reviews       Reviews[]
   notifications Notifications[]
   botState      BotState?
-  payments      Payment[]       // Payment modeli bilan bog'liqlik qo'shildi
+  payments      Payment[]
+}
+
+// YANGI: API kodingiz ushbu modelni findMany() qilmoqda
+model Subject {
+  id        Int      @id @default(autoincrement())
+  name      String
+  centerId  Int
+  createdAt DateTime @default(now())
 }
 
 model Enrollment {
@@ -44,12 +53,13 @@ model Course {
   id          Int          @id @default(autoincrement())
   title       String
   description String
+  centerId    Int?         // API kodingiz uchun ehtimoliy kerakli maydon
   enrollments Enrollment[]
   teacherId   Int
   teacher     Teacher      @relation(fields: [teacherId], references: [id])
-  attendance  Attendance[] // Attendance bilan bog'liqlik
-  results     Results[]    // Results bilan bog'liqlik
-  reviews     Reviews[]    // Reviews bilan bog'liqlik
+  attendance  Attendance[]
+  results     Results[]
+  reviews     Reviews[]
 }
 
 model Payment {
@@ -98,7 +108,7 @@ model Notifications {
 
 model BotState {
   id     Int  @id @default(autoincrement())
-  userId Int  @unique // User bilan 1:1 bog'liqlik uchun @unique kerak
+  userId Int  @unique
   state  Json
   user   User @relation(fields: [userId], references: [id])
 }
@@ -106,4 +116,6 @@ model BotState {
 enum Role {
   USER
   ADMIN
+  TEACHER  // API kodingizda 'TEACHER' roli ishlatilgan
+  STUDENT  // API kodingizda 'STUDENT' roli ishlatilgan
 }
