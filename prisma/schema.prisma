@@ -7,6 +7,16 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// YANGI MODEL: Markazlar uchun
+model Center {
+  id        String    @id @default(cuid())
+  name      String
+  users     User[]
+  subjects  Subject[]
+  courses   Course[]
+  createdAt DateTime  @default(now())
+}
+
 model User {
   id            Int             @id @default(autoincrement())
   firstName     String?         
@@ -16,7 +26,11 @@ model User {
   email         String?         @unique 
   phone         String?         
   role          Role            @default(STUDENT)
+  
+  // Bog'lanishlar
   centerId      String?         
+  center        Center?         @relation(fields: [centerId], references: [id])
+  
   enrollments   Enrollment[]
   attendance    Attendance[]
   results       Results[]
@@ -31,10 +45,32 @@ model Subject {
   id        Int      @id @default(autoincrement())
   name      String
   price     Float    @default(0)  
+  
+  // Bog'lanish
   centerId  String
+  center    Center   @relation(fields: [centerId], references: [id])
+  
   createdAt DateTime @default(now())
 }
 
+model Course {
+  id          Int          @id @default(autoincrement())
+  title       String
+  description String
+  
+  // Bog'lanish
+  centerId    String?      
+  center      Center?      @relation(fields: [centerId], references: [id])
+  
+  enrollments Enrollment[]
+  teacherId   Int
+  teacher     Teacher      @relation(fields: [teacherId], references: [id])
+  attendance  Attendance[]
+  results     Results[]
+  reviews     Reviews[]
+}
+
+// Qolgan modellar o'zgarmaydi...
 model Enrollment {
   id        Int      @id @default(autoincrement())
   userId    Int
@@ -49,19 +85,6 @@ model Teacher {
   name    String
   email   String   @unique
   courses Course[]
-}
-
-model Course {
-  id          Int          @id @default(autoincrement())
-  title       String
-  description String
-  centerId    String?      
-  enrollments Enrollment[]
-  teacherId   Int
-  teacher     Teacher      @relation(fields: [teacherId], references: [id])
-  attendance  Attendance[]
-  results     Results[]
-  reviews     Reviews[]
 }
 
 model Payment {
