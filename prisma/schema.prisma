@@ -8,19 +8,23 @@ datasource db {
 }
 
 model Center {
-  id        String    @id @default(cuid())
-  name      String
-  users     User[]
-  subjects  Subject[]
-  courses   Course[]
-  createdAt DateTime  @default(now())
+  id          String    @id @default(cuid())
+  name        String
+  description String?   // API: center/settings/route.ts uchun shart
+  latitude    Float?    // API: center/settings/route.ts uchun shart
+  longitude   Float?    // API: center/settings/route.ts uchun shart
+  address     String?   
+  users       User[]
+  subjects    Subject[]
+  courses     Course[]
+  createdAt   DateTime  @default(now())
 }
 
 model User {
   id            Int             @id @default(autoincrement())
-  telegramId    String?         @unique 
-  firstName     String?         
-  lastName      String?         // BU YERDAlastName BORLIGINI TASDIQLANG
+  telegramId    String?         @unique // API: bot/route.ts uchun shart
+  firstName     String?         // API: bot/route.ts uchun shart
+  lastName      String?         // API: bot/route.ts uchun shart
   name          String?         
   username      String          @unique
   password      String          
@@ -41,16 +45,27 @@ model User {
   createdAt     DateTime        @default(now())
 }
 
-// QOLGAN MODELLAR O'ZGARIShSIZ QOLADI...
-// Subject, Enrollment, Teacher, Course, Payment, Attendance, Results, Reviews, Notifications, BotState
-
 model Subject {
   id        Int      @id @default(autoincrement())
   name      String
-  price     Float    @default(0)  
+  price     Float    @default(0)  // API: admin/stats/route.ts uchun shart
   centerId  String
   center    Center   @relation(fields: [centerId], references: [id])
   createdAt DateTime @default(now())
+}
+
+model Course {
+  id          Int          @id @default(autoincrement())
+  title       String
+  description String
+  centerId    String?      
+  center      Center?      @relation(fields: [centerId], references: [id])
+  enrollments Enrollment[]
+  teacherId   Int
+  teacher     Teacher      @relation(fields: [teacherId], references: [id])
+  attendance  Attendance[]
+  results     Results[]
+  reviews     Reviews[]
 }
 
 model Enrollment {
@@ -67,20 +82,6 @@ model Teacher {
   name    String
   email   String   @unique
   courses Course[]
-}
-
-model Course {
-  id          Int          @id @default(autoincrement())
-  title       String
-  description String
-  centerId    String?      
-  center      Center?      @relation(fields: [centerId], references: [id])
-  enrollments Enrollment[]
-  teacherId   Int
-  teacher     Teacher      @relation(fields: [teacherId], references: [id])
-  attendance  Attendance[]
-  results     Results[]
-  reviews     Reviews[]
 }
 
 model Payment {
