@@ -1,21 +1,18 @@
-// 1. Prisma Client generatori
 generator client {
   provider = "prisma-client-js"
 }
 
-// 2. Ma'lumotlar bazasi ulanishi
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-// 3. Modellar
 model User {
   id            Int             @id @default(autoincrement())
   name          String
   email         String          @unique
   role          Role
-  centerId      String?         // Int? dan String? ga o'zgartirildi
+  centerId      String?         
   enrollments   Enrollment[]
   attendance    Attendance[]
   results       Results[]
@@ -28,7 +25,8 @@ model User {
 model Subject {
   id        Int      @id @default(autoincrement())
   name      String
-  centerId  String   // Int dan String ga o'zgartirildi
+  price     Float    @default(0)  // Narx ustuni qo'shildi
+  centerId  String
   createdAt DateTime @default(now())
 }
 
@@ -52,7 +50,7 @@ model Course {
   id          Int          @id @default(autoincrement())
   title       String
   description String
-  centerId    String?      // Int? dan String? ga o'zgartirildi
+  centerId    String?      
   enrollments Enrollment[]
   teacherId   Int
   teacher     Teacher      @relation(fields: [teacherId], references: [id])
